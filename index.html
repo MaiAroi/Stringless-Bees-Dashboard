@@ -13,8 +13,10 @@
     box-sizing: border-box;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
-
-    --bg: #FBF3DD;
+ 
+    --bg-a: #FDF6E3;
+    --bg-b: #FBE9C6;
+    --bg-c: #F6D9A0;
     --surface: #FFFDF6;
     --surface-2: #F3E8CC;
     --ink: #2B2013;
@@ -26,11 +28,19 @@
     --teal: #3A7472;
     --clay: #A44F31;
     --warn: #A6431F;
-    --shadow: none;
+ 
+    /* glass / bubble tokens */
+    --glass: rgba(255, 253, 246, 0.5);
+    --glass-strong: rgba(255, 253, 246, 0.72);
+    --glass-border: rgba(199, 134, 30, 0.28);
+    --glass-highlight: rgba(255, 255, 255, 0.65);
+    --glass-shadow: rgba(122, 84, 16, 0.14);
   }
   :root:not([data-theme="light"]) {
     @media (prefers-color-scheme: dark) {
-      --bg: #191309;
+      --bg-a: #171009;
+      --bg-b: #1F160C;
+      --bg-c: #241B0E;
       --surface: #221A0F;
       --surface-2: #2C2213;
       --ink: #F3E9D2;
@@ -42,10 +52,18 @@
       --teal: #6BB0AD;
       --clay: #D07C57;
       --warn: #E08A5C;
+ 
+      --glass: rgba(38, 29, 16, 0.5);
+      --glass-strong: rgba(44, 34, 19, 0.72);
+      --glass-border: rgba(227, 169, 59, 0.22);
+      --glass-highlight: rgba(255, 232, 180, 0.08);
+      --glass-shadow: rgba(0, 0, 0, 0.35);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #191309;
+    --bg-a: #171009;
+    --bg-b: #1F160C;
+    --bg-c: #241B0E;
     --surface: #221A0F;
     --surface-2: #2C2213;
     --ink: #F3E9D2;
@@ -57,98 +75,119 @@
     --teal: #6BB0AD;
     --clay: #D07C57;
     --warn: #E08A5C;
+ 
+    --glass: rgba(38, 29, 16, 0.5);
+    --glass-strong: rgba(44, 34, 19, 0.72);
+    --glass-border: rgba(227, 169, 59, 0.22);
+    --glass-highlight: rgba(255, 232, 180, 0.08);
+    --glass-shadow: rgba(0, 0, 0, 0.35);
   }
-
+ 
   * { box-sizing: inherit; }
   html { scroll-padding-top: env(safe-area-inset-top, 0px); }
   html, body { height: 100%; }
   body {
     margin: 0;
-    background: var(--bg);
     color: var(--ink);
     font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
+    position: relative;
+    background: var(--bg-b);
   }
   h1, h2, .display { font-family: 'Fraunces', Georgia, serif; }
-
-  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px 64px; }
-
+ 
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px 64px; position: relative; z-index: 1; }
+ 
+  /* ---------- Glass / bubble surface (shared) ---------- */
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid var(--glass-border);
+    border-radius: 26px;
+    box-shadow:
+      0 14px 34px -18px var(--glass-shadow),
+      inset 0 1px 0 var(--glass-highlight);
+  }
+ 
   /* ---------- Header ---------- */
   .topbar {
-    position: relative;
-    padding: 28px 20px 26px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--line);
-    overflow: hidden;
-  }
-  .hexfield {
-    position: absolute; inset: 0;
-    opacity: .35;
-    pointer-events: none;
+    position: sticky;
+    top: 14px;
+    z-index: 10;
+    margin: 14px auto 0;
+    max-width: 980px;
+    padding: 22px 24px;
   }
   .topbar-inner {
-    max-width: 980px; margin: 0 auto;
     position: relative;
     display: flex; align-items: flex-end; justify-content: space-between;
     gap: 16px; flex-wrap: wrap;
   }
-  .brand h1 { margin: 0; font-size: clamp(28px, 5vw, 38px); font-weight: 600; letter-spacing: -0.01em; }
-  .brand p { margin: 6px 0 0; color: var(--ink-soft); font-size: 14.5px; max-width: 46ch; line-height: 1.5; }
+  .brand-row { display: flex; align-items: center; gap: 14px; }
+  .bee-logo { flex: 0 0 auto; width: 58px; height: 58px; transform-origin: 50% 62%; animation: bee-wiggle 3.4s ease-in-out infinite; }
+  @keyframes bee-wiggle {
+    0%, 100% { transform: rotate(-6deg) translateY(0); }
+    50% { transform: rotate(7deg) translateY(-3px); }
+  }
+  @media (prefers-reduced-motion: reduce) { .bee-logo { animation: none; } }
+  .brand h1 { margin: 0; font-size: clamp(26px, 5vw, 36px); font-weight: 600; letter-spacing: -0.01em; }
+  .brand p { margin: 6px 0 0; color: var(--ink-soft); font-size: 14px; max-width: 46ch; line-height: 1.5; }
   .topbar-actions { display: flex; align-items: center; gap: 10px; }
   .status-line { font-size: 13px; color: var(--ink-soft); text-align: right; margin-right: 4px; }
   .status-line strong { color: var(--ink); font-weight: 600; }
-
+ 
   button.iconbtn {
-    border: 1px solid var(--line);
-    background: var(--surface);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-strong);
+    backdrop-filter: blur(10px);
     color: var(--ink);
     width: 40px; height: 40px;
-    border-radius: 10px;
+    border-radius: 999px;
     cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
-    transition: border-color .15s ease, transform .15s ease;
+    transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
   }
-  button.iconbtn:hover { border-color: var(--amber); }
+  button.iconbtn:hover { border-color: var(--amber); box-shadow: 0 6px 16px -8px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight); }
   button.iconbtn:active { transform: scale(0.94); }
   button.iconbtn.spinning svg { animation: spin 0.9s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
+ 
   /* ---------- Hive grid ---------- */
   .section-head { margin: 40px 0 16px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .section-head h2 { margin: 0; font-size: 21px; font-weight: 600; }
   .section-head .caption { color: var(--ink-soft); font-size: 13.5px; }
-
+ 
   .hive-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     gap: 18px;
   }
   .hive-panel {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-top: none;
-    padding: 30px 18px 20px;
+    padding: 32px 20px 22px;
     position: relative;
   }
   .hex-cap {
-    position: absolute; top: -20px; left: 18px;
-    width: 40px; height: 34px;
+    position: absolute; top: -18px; left: 20px;
+    width: 42px; height: 36px;
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
     display: flex; align-items: center; justify-content: center;
     color: #fff; font-weight: 700; font-size: 14px; font-family: 'Fraunces', serif;
+    box-shadow: 0 8px 16px -8px var(--glass-shadow);
   }
   .hive-name { margin: 0 0 2px; font-size: 17px; font-weight: 600; }
   .hive-meta { font-size: 12px; color: var(--ink-soft); margin-bottom: 16px; }
   .hive-meta.stale { color: var(--warn); }
-  .reading { display: flex; align-items: baseline; justify-content: space-between; padding: 9px 0; border-top: 1px dashed var(--line); }
+  .reading { display: flex; align-items: baseline; justify-content: space-between; padding: 9px 0; border-top: 1px dashed var(--glass-border); }
   .reading:first-of-type { border-top: none; }
   .reading .label { font-size: 12.5px; color: var(--ink-soft); }
   .reading .value { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; }
   .reading .delta { font-size: 11.5px; margin-left: 6px; font-family: 'Inter', sans-serif; font-weight: 600; }
   .delta.up { color: var(--moss); }
   .delta.down { color: var(--clay); }
-
+ 
   .hive-empty, .hive-error {
     font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; padding: 6px 0 4px;
   }
@@ -157,36 +196,54 @@
     background: none; border: none; color: var(--amber-ink); text-decoration: underline;
     cursor: pointer; font-size: 13.5px; padding: 0; font-family: inherit;
   }
-
+ 
   /* ---------- Charts ---------- */
-  .range-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .range-toggle { display: inline-flex; border: 1px solid var(--glass-border); border-radius: 999px; overflow: hidden; background: var(--glass); backdrop-filter: blur(10px); }
   .range-toggle button {
-    border: none; background: var(--surface); color: var(--ink-soft);
+    border: none; background: transparent; color: var(--ink-soft);
     font-size: 13px; font-weight: 600; padding: 7px 14px; cursor: pointer;
     font-family: 'Inter', sans-serif;
   }
-  .range-toggle button.active { background: var(--amber); color: #1c1406; }
-
-  .chart-block { margin-top: 26px; background: var(--surface); border: 1px solid var(--line); padding: 20px 18px 14px; }
+  .range-toggle button.active { background: var(--amber); color: #1c1406; border-radius: 999px; }
+ 
+  .custom-range {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    border-radius: 16px;
+  }
+  .custom-range.show { display: flex; }
+  .custom-range label { font-size: 12px; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
+  .custom-range input[type=datetime-local] {
+    border: 1px solid var(--glass-border); border-radius: 10px; background: var(--surface-2);
+    color: var(--ink); font-family: inherit; font-size: 12.5px; padding: 6px 8px;
+  }
+  .custom-range .hint { font-size: 11.5px; color: var(--ink-soft); width: 100%; }
+ 
+  .chart-block { margin-top: 26px; padding: 22px 20px 16px; }
   .chart-block h3 { margin: 0 0 2px; font-size: 16px; font-weight: 600; }
   .chart-block .caption { margin: 0 0 14px; color: var(--ink-soft); font-size: 13px; }
   .chart-block canvas { max-height: 260px; }
   .legend-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-soft); }
   .legend-dot { width: 9px; height: 9px; border-radius: 2px; }
-
-  footer { margin-top: 44px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.6; border-top: 1px solid var(--line); padding-top: 16px; }
-
+ 
+  footer { margin-top: 44px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.6; padding: 16px 20px; }
+ 
   /* ---------- Settings drawer ---------- */
   .scrim {
-    position: fixed; inset: 0; background: rgba(20, 15, 5, 0.45);
+    position: fixed; inset: 0; background: rgba(20, 15, 5, 0.35);
+    backdrop-filter: blur(2px);
     opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 20;
   }
   .scrim.open { opacity: 1; pointer-events: auto; }
   .drawer {
-    position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 92vw);
-    background: var(--surface); border-left: 1px solid var(--line);
-    transform: translateX(100%); transition: transform .25s ease;
+    position: fixed; top: 14px; right: 14px; bottom: 14px; width: min(420px, calc(92vw - 28px));
+    border-radius: 26px;
+    transform: translateX(120%); transition: transform .25s ease;
     z-index: 21; overflow-y: auto;
     padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
   }
@@ -194,14 +251,17 @@
   .drawer-inner { padding: 22px 20px 40px; }
   .drawer-inner h2 { margin: 0 0 4px; font-size: 20px; }
   .drawer-inner .caption { color: var(--ink-soft); font-size: 13px; margin: 0 0 20px; line-height: 1.5; }
-
+ 
   .hive-form {
-    border: 1px solid var(--line); padding: 14px; margin-bottom: 14px; position: relative;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-strong);
+    border-radius: 18px;
+    padding: 14px 16px; margin-bottom: 14px; position: relative;
   }
   .hive-form label { display: block; font-size: 12px; color: var(--ink-soft); margin: 10px 0 4px; }
   .hive-form label:first-of-type { margin-top: 0; }
   .hive-form input[type=text] {
-    width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px;
+    width: 100%; padding: 9px 12px; border: 1px solid var(--glass-border); border-radius: 12px;
     background: var(--surface-2); color: var(--ink); font-family: inherit; font-size: 13.5px;
   }
   .hive-form input[type=text]:focus { outline: 2px solid var(--amber); outline-offset: 1px; }
@@ -213,52 +273,73 @@
   }
   .test-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
   .testbtn {
-    border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
-    font-size: 12.5px; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-family: inherit;
+    border: 1px solid var(--glass-border); background: var(--surface-2); color: var(--ink);
+    font-size: 12.5px; padding: 6px 14px; border-radius: 999px; cursor: pointer; font-family: inherit;
   }
   .test-result { font-size: 12px; }
   .test-result.ok { color: var(--moss); }
   .test-result.fail { color: var(--warn); }
-
+ 
   .addbtn {
-    width: 100%; padding: 12px; border: 1px dashed var(--line); background: none;
-    color: var(--ink-soft); border-radius: 6px; cursor: pointer; font-size: 13.5px; font-family: inherit;
+    width: 100%; padding: 12px; border: 1px dashed var(--glass-border); background: none;
+    color: var(--ink-soft); border-radius: 16px; cursor: pointer; font-size: 13.5px; font-family: inherit;
     margin-bottom: 18px;
   }
   .addbtn:hover { border-color: var(--amber); color: var(--amber-ink); }
-
+ 
   .drawer-actions { display: flex; gap: 10px; margin-top: 6px; }
   .btn-primary, .btn-secondary {
-    flex: 1; padding: 11px; border-radius: 8px; font-size: 14px; font-weight: 600;
+    flex: 1; padding: 11px; border-radius: 999px; font-size: 14px; font-weight: 600;
     cursor: pointer; font-family: inherit; border: 1px solid transparent;
   }
   .btn-primary { background: var(--amber); color: #1c1406; }
-  .btn-secondary { background: none; border-color: var(--line); color: var(--ink); }
-
+  .btn-secondary { background: none; border-color: var(--glass-border); color: var(--ink); }
+ 
   .field-row { display: flex; gap: 10px; }
   .field-row > div { flex: 1; }
-
+ 
   @media (max-width: 560px) {
     .status-line { display: none; }
+    .topbar { top: 8px; padding: 18px 16px; }
+    .drawer { top: 8px; right: 8px; bottom: 8px; }
   }
 </style>
 </head>
 <body>
-
-<header class="topbar">
-  <svg class="hexfield" viewBox="0 0 400 140" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <defs>
-      <pattern id="hexpat" width="44" height="76" patternUnits="userSpaceOnUse" patternTransform="translate(0,-10)">
-        <polygon points="22,0 44,12.7 44,38.1 22,50.8 0,38.1 0,12.7" fill="none" stroke="var(--amber)" stroke-width="1"/>
-        <polygon points="22,25.4 44,38.1 44,63.5 22,76.2 0,63.5 0,38.1" fill="none" stroke="var(--amber)" stroke-width="1"/>
-      </pattern>
-    </defs>
-    <rect width="400" height="140" fill="url(#hexpat)" />
-  </svg>
+ 
+<header class="topbar glass">
   <div class="topbar-inner">
     <div class="brand">
-      <h1>Stringless bees</h1>
-      <p>แดชบอร์ดตรวจวัดรังชันโรงแบบรียลไทม์ — อุณหภูมิ ความชื้น และน้ำหนัก จากเซนเซอร์ที่บันทึกลง Google ชีตทุกชั่วโมง</p>
+      <div class="brand-row">
+        <svg class="bee-logo" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" role="img" aria-label="โลโก้ผึ้งบล็อกเหลี่ยมสไตล์มายคราฟ">
+          <rect x="2" y="30" width="22" height="30" fill="rgba(255,255,255,.85)" stroke="#2B2013" stroke-width="3"/>
+          <rect x="96" y="30" width="22" height="30" fill="rgba(255,255,255,.8)" stroke="#2B2013" stroke-width="3"/>
+          <rect x="32" y="2" width="18" height="12" fill="#2B2013"/>
+          <rect x="38" y="12" width="6" height="14" fill="#2B2013"/>
+          <rect x="70" y="2" width="18" height="12" fill="#2B2013"/>
+          <rect x="76" y="12" width="6" height="14" fill="#2B2013"/>
+          <rect x="22" y="24" width="76" height="74" fill="#F6D9A0" stroke="#2B2013" stroke-width="4"/>
+          <rect x="22" y="38" width="76" height="10" fill="#2B2013"/>
+          <rect x="22" y="60" width="76" height="10" fill="#2B2013"/>
+          <rect x="22" y="82" width="76" height="10" fill="#2B2013"/>
+          <rect x="36" y="48" width="14" height="12" fill="#2B2013"/>
+          <rect x="39" y="50" width="4" height="4" fill="#FFFDF6"/>
+          <rect x="70" y="48" width="11" height="10" fill="#2B2013"/>
+          <rect x="73" y="50" width="3" height="3" fill="#FFFDF6"/>
+          <rect x="28" y="64" width="8" height="7" fill="#E38A8A" opacity=".5"/>
+          <rect x="84" y="64" width="8" height="7" fill="#E38A8A" opacity=".45"/>
+          <rect x="50" y="72" width="20" height="4" fill="#2B2013"/>
+          <rect x="46" y="68" width="4" height="4" fill="#2B2013"/>
+          <rect x="70" y="68" width="4" height="4" fill="#2B2013"/>
+          <rect x="94" y="58" width="10" height="6" fill="#2B2013"/>
+          <rect x="34" y="98" width="9" height="14" fill="#2B2013"/>
+          <rect x="77" y="98" width="9" height="14" fill="#2B2013"/>
+        </svg>
+        <div>
+          <h1>Stringless bees</h1>
+          <p>แดชบอร์ดตรวจวัดรังชันโรงแบบเรียลไทม์ — อุณหภูมิ ความชื้น และน้ำหนัก จากเซนเซอร์ที่บันทึกลง Google ชีตทุกชั่วโมง</p>
+        </div>
+      </div>
     </div>
     <div class="topbar-actions">
       <div class="status-line" id="statusLine">กำลังโหลดข้อมูล…</div>
@@ -274,52 +355,62 @@
     </div>
   </div>
 </header>
-
+ 
 <div class="wrap">
-
+ 
   <div class="section-head">
     <h2>ค่าล่าสุดรายรัง</h2>
     <span class="caption" id="hiveCountCaption"></span>
   </div>
   <div class="hive-grid" id="hiveGrid"></div>
-
+ 
   <div class="section-head">
-    <h2>แนวโน้มข้อมูล</h2>
+    <div>
+      <h2>แนวโน้มข้อมูล</h2>
+      <span class="caption">ดูย้อนหลังได้ตั้งแต่เริ่มเก็บข้อมูล — เลือกช่วงสำเร็จรูปหรือกำหนดวันที่เอง</span>
+    </div>
     <div class="range-toggle" id="rangeToggle">
       <button data-range="24h" class="active">24 ชม.</button>
       <button data-range="7d">7 วัน</button>
+      <button data-range="30d">30 วัน</button>
       <button data-range="all">ทั้งหมด</button>
+      <button data-range="custom">กำหนดเอง</button>
     </div>
   </div>
-
-  <div class="chart-block">
+  <div class="custom-range glass" id="customRange">
+    <span class="hint">เลือกช่วงวันที่-เวลาที่ต้องการย้อนดูประวัติข้อมูล</span>
+    <label>จาก <input type="datetime-local" id="customFrom"></label>
+    <label>ถึง <input type="datetime-local" id="customTo"></label>
+  </div>
+ 
+  <div class="chart-block glass">
     <h3>อุณหภูมิ</h3>
     <p class="caption">บ่งบอกการควบคุมอุณหภูมิภายในรังของชันโรง — ค่าที่แกว่งมากผิดปกติอาจหมายถึงรังอ่อนแอหรือมีสิ่งรบกวน</p>
     <canvas id="chartTemp"></canvas>
     <div class="legend-row" id="legendTemp"></div>
   </div>
-
-  <div class="chart-block">
+ 
+  <div class="chart-block glass">
     <h3>ความชื้นสัมพัทธ์</h3>
     <p class="caption">ความชื้นในรังสัมพันธ์กับการเก็บรักษาน้ำหวานและไข่อ่อน — เปลี่ยนแปลงตามสภาพอากาศภายนอกและกิจกรรมของผึ้ง</p>
     <canvas id="chartHum"></canvas>
     <div class="legend-row" id="legendHum"></div>
   </div>
-
-  <div class="chart-block">
+ 
+  <div class="chart-block glass">
     <h3>น้ำหนักรัง</h3>
     <p class="caption">น้ำหนักที่เพิ่มขึ้นสะท้อนการหาอาหารและสะสมน้ำหวาน ส่วนที่ลดลงกะทันหันอาจบ่งชี้การทิ้งรังหรือถูกรบกวน</p>
     <canvas id="chartWeight"></canvas>
     <div class="legend-row" id="legendWeight"></div>
   </div>
-
-  <footer>
+ 
+  <footer class="glass">
     ดึงข้อมูลตรงจาก Google ชีตของแต่ละรัง (ต้องแชร์แบบ "ทุกคนที่มีลิงก์ดูได้") รีเฟรชอัตโนมัติทุก 5 นาที การตั้งค่าลิงก์ถูกบันทึกไว้ในเบราว์เซอร์นี้เท่านั้น
   </footer>
 </div>
-
+ 
 <div class="scrim" id="scrim"></div>
-<aside class="drawer" id="drawer" aria-label="ตั้งค่าลิงก์รัง">
+<aside class="drawer glass" id="drawer" aria-label="ตั้งค่าลิงก์รัง">
   <div class="drawer-inner">
     <h2>ตั้งค่าลิงก์รัง</h2>
     <p class="caption">เพิ่มลิงก์ Google ชีตของแต่ละรังได้ไม่จำกัดจำนวน แต่ละชีตต้องมีคอลัมน์เรียงกันเป็น วันที่/เวลา, อุณหภูมิ, ความชื้น, น้ำหนัก และต้องแชร์เป็น "ทุกคนที่มีลิงก์ดูได้"</p>
@@ -331,30 +422,32 @@
     </div>
   </div>
 </aside>
-
+ 
 <script>
 (function () {
   "use strict";
-
+ 
   var STORAGE_KEY = 'chanrong-hives-v1';
   var THEME_KEY = 'chanrong-theme';
   var PALETTE = ['#C7861E', '#52713C', '#3A7472', '#A44F31', '#7A5FA8', '#3B6E9C'];
-
+ 
   var DEFAULT_HIVES = [
     { id: 'h1', name: 'รังที่ 1', url: 'https://docs.google.com/spreadsheets/d/1Z3stbTTjkv_cIfGvNMidheTTAc7tMGKxvTJidm54HEM/edit?usp=sharing', color: PALETTE[0] },
     { id: 'h2', name: 'รังที่ 2', url: '', color: PALETTE[1] },
     { id: 'h3', name: 'รังที่ 3', url: '', color: PALETTE[2] }
   ];
-
+ 
   var state = {
     hives: loadHives(),
     data: {},       // id -> { rows, error, fetchedAt }
     range: '24h',
+    customFrom: null,
+    customTo: null,
     lastRefresh: null
   };
-
+ 
   var charts = { temp: null, hum: null, weight: null };
-
+ 
   // ---------- persistence ----------
   function loadHives() {
     try {
@@ -379,7 +472,7 @@
       document.documentElement.removeAttribute('data-theme');
     }
   }
-
+ 
   // ---------- google sheet parsing ----------
   function extractSheetId(url) {
     var m = (url || '').match(/\/d\/([a-zA-Z0-9-_]+)/);
@@ -426,7 +519,7 @@
     var n = parseFloat(String(v).replace(',', '.'));
     return n;
   }
-
+ 
   function fetchHive(hive) {
     if (!hive.url) return Promise.resolve({ rows: [], error: null, empty: true });
     var gurl = buildGvizUrl(hive.url);
@@ -455,7 +548,7 @@
         return { rows: [], error: err.message || 'โหลดข้อมูลไม่สำเร็จ — ตรวจสอบว่าแชร์ชีตแบบ "ทุกคนที่มีลิงก์ดูได้"' };
       });
   }
-
+ 
   function refreshAll() {
     var btn = document.getElementById('refreshBtn');
     btn.classList.add('spinning');
@@ -469,7 +562,7 @@
       renderAll();
     });
   }
-
+ 
   // ---------- formatting ----------
   function fmtTime(d) {
     return pad(d.getHours()) + ':' + pad(d.getMinutes());
@@ -486,31 +579,31 @@
     if (s < 86400) return Math.floor(s / 3600) + ' ชม.ที่แล้ว';
     return Math.floor(s / 86400) + ' วันที่แล้ว';
   }
-
+ 
   // ---------- render: hive cards ----------
   function renderHiveGrid() {
     var grid = document.getElementById('hiveGrid');
     grid.innerHTML = '';
     document.getElementById('hiveCountCaption').textContent = state.hives.length + ' รัง';
-
+ 
     state.hives.forEach(function (hive, idx) {
       var panel = document.createElement('div');
-      panel.className = 'hive-panel';
-      panel.style.borderTopColor = hive.color;
-
+      panel.className = 'hive-panel glass';
+      panel.style.setProperty('--glass-border', hive.color + '55');
+ 
       var cap = document.createElement('div');
       cap.className = 'hex-cap';
       cap.style.background = hive.color;
       cap.textContent = idx + 1;
       panel.appendChild(cap);
-
+ 
       var name = document.createElement('p');
       name.className = 'hive-name';
       name.textContent = hive.name || ('รังที่ ' + (idx + 1));
       panel.appendChild(name);
-
+ 
       var res = state.data[hive.id];
-
+ 
       if (!hive.url) {
         var meta = document.createElement('div');
         meta.className = 'hive-meta';
@@ -528,7 +621,7 @@
         grid.appendChild(panel);
         return;
       }
-
+ 
       if (!res) {
         var loading = document.createElement('div');
         loading.className = 'hive-meta';
@@ -537,7 +630,7 @@
         grid.appendChild(panel);
         return;
       }
-
+ 
       if (res.error) {
         var meta2 = document.createElement('div');
         meta2.className = 'hive-meta stale';
@@ -550,7 +643,7 @@
         grid.appendChild(panel);
         return;
       }
-
+ 
       if (!res.rows.length) {
         var meta3 = document.createElement('div');
         meta3.className = 'hive-meta';
@@ -563,24 +656,24 @@
         grid.appendChild(panel);
         return;
       }
-
+ 
       var last = res.rows[res.rows.length - 1];
       var prev = res.rows.length > 1 ? res.rows[res.rows.length - 2] : null;
       var stale = (Date.now() - last.date.getTime()) > 2 * 3600 * 1000;
-
+ 
       var meta = document.createElement('div');
       meta.className = 'hive-meta' + (stale ? ' stale' : '');
       meta.textContent = (stale ? '⚠ ' : '') + 'อัปเดต ' + fmtDay(last.date) + ' ' + fmtTime(last.date) + (stale ? ' (ข้อมูลอาจค้าง)' : '');
       panel.appendChild(meta);
-
+ 
       panel.appendChild(readingRow('อุณหภูมิ', last.temp, prev ? prev.temp : null, '°C'));
       panel.appendChild(readingRow('ความชื้น', last.hum, prev ? prev.hum : null, '%'));
       panel.appendChild(readingRow('น้ำหนัก', last.weight, prev ? prev.weight : null, ' ก.'));
-
+ 
       grid.appendChild(panel);
     });
   }
-
+ 
   function readingRow(label, val, prevVal, unit) {
     var row = document.createElement('div');
     row.className = 'reading';
@@ -606,16 +699,34 @@
     return row;
   }
   function round1(n) { return Math.round(n * 10) / 10; }
-
+ 
   // ---------- render: charts ----------
   function rangeMs() {
     if (state.range === '24h') return 24 * 3600 * 1000;
     if (state.range === '7d') return 7 * 24 * 3600 * 1000;
+    if (state.range === '30d') return 30 * 24 * 3600 * 1000;
     return null;
+  }
+  function getDataBounds() {
+    var min = null, max = null;
+    state.hives.forEach(function (h) {
+      var res = state.data[h.id];
+      if (res && res.rows && res.rows.length) {
+        var first = res.rows[0].date, last = res.rows[res.rows.length - 1].date;
+        if (!min || first < min) min = first;
+        if (!max || last > max) max = last;
+      }
+    });
+    return { min: min, max: max };
   }
   function filteredRows(hiveId) {
     var res = state.data[hiveId];
     if (!res || !res.rows) return [];
+    if (state.range === 'custom') {
+      var from = state.customFrom ? state.customFrom.getTime() : -Infinity;
+      var to = state.customTo ? state.customTo.getTime() : Infinity;
+      return decimate(res.rows.filter(function (r) { return r.date.getTime() >= from && r.date.getTime() <= to; }), 400);
+    }
     var ms = rangeMs();
     if (ms == null) return decimate(res.rows, 400);
     var cutoff = Date.now() - ms;
@@ -630,9 +741,14 @@
     return out;
   }
   function labelFor(d) {
-    return state.range === 'all' ? fmtDay(d) : fmtDay(d) + ' ' + fmtTime(d);
+    if (state.range === 'all') return fmtDay(d);
+    if (state.range === 'custom') {
+      var span = (state.customFrom && state.customTo) ? (state.customTo.getTime() - state.customFrom.getTime()) : 0;
+      return span > 3 * 24 * 3600 * 1000 ? fmtDay(d) : fmtDay(d) + ' ' + fmtTime(d);
+    }
+    return fmtDay(d) + ' ' + fmtTime(d);
   }
-
+ 
   function buildDatasets(key) {
     // union of all timestamps across hives, sorted
     var allDates = [];
@@ -644,7 +760,7 @@
     });
     allDates = Array.from(new Set(allDates)).sort(function (a, b) { return a - b; });
     var labels = allDates.map(function (t) { return labelFor(new Date(t)); });
-
+ 
     var datasets = state.hives.filter(function (h) { return h.url; }).map(function (h) {
       var rows = perHive[h.id];
       var byTime = {};
@@ -666,7 +782,7 @@
     });
     return { labels: labels, datasets: datasets };
   }
-
+ 
   function chartOptions() {
     var gridColor = getComputedStyle(document.documentElement).getPropertyValue('--line').trim();
     var inkColor = getComputedStyle(document.documentElement).getPropertyValue('--ink-soft').trim();
@@ -681,13 +797,13 @@
       }
     };
   }
-
+ 
   function renderChart(canvasId, legendId, key, chartKey) {
     var ctx = document.getElementById(canvasId).getContext('2d');
     var built = buildDatasets(key);
     if (charts[chartKey]) charts[chartKey].destroy();
     charts[chartKey] = new Chart(ctx, { type: 'line', data: { labels: built.labels, datasets: built.datasets }, options: chartOptions() });
-
+ 
     var legend = document.getElementById(legendId);
     legend.innerHTML = '';
     built.datasets.forEach(function (ds) {
@@ -703,26 +819,26 @@
       legend.appendChild(item);
     });
   }
-
+ 
   function renderCharts() {
     renderChart('chartTemp', 'legendTemp', 'temp', 'temp');
     renderChart('chartHum', 'legendHum', 'hum', 'hum');
     renderChart('chartWeight', 'legendWeight', 'weight', 'weight');
   }
-
+ 
   function renderStatus() {
     var el = document.getElementById('statusLine');
     if (state.lastRefresh) {
       el.innerHTML = 'อัปเดตล่าสุด <strong>' + relTime(state.lastRefresh) + '</strong>';
     }
   }
-
+ 
   function renderAll() {
     renderHiveGrid();
     renderCharts();
     renderStatus();
   }
-
+ 
   // ---------- settings drawer ----------
   var draftHives = [];
   function openDrawer() {
@@ -741,7 +857,7 @@
     draftHives.forEach(function (hive, idx) {
       var form = document.createElement('div');
       form.className = 'hive-form';
-
+ 
       var top = document.createElement('div');
       top.className = 'hive-form-top';
       var title = document.createElement('span');
@@ -755,7 +871,7 @@
         top.appendChild(rm);
       }
       form.appendChild(top);
-
+ 
       var nameLabel = document.createElement('label');
       nameLabel.textContent = 'ชื่อรัง';
       form.appendChild(nameLabel);
@@ -764,7 +880,7 @@
       nameInput.value = hive.name;
       nameInput.oninput = function () { hive.name = nameInput.value; };
       form.appendChild(nameInput);
-
+ 
       var urlLabel = document.createElement('label');
       urlLabel.textContent = 'ลิงก์ Google ชีต';
       form.appendChild(urlLabel);
@@ -774,7 +890,7 @@
       urlInput.value = hive.url;
       urlInput.oninput = function () { hive.url = urlInput.value.trim(); };
       form.appendChild(urlInput);
-
+ 
       var testRow = document.createElement('div');
       testRow.className = 'test-row';
       var testBtn = document.createElement('button');
@@ -802,11 +918,11 @@
       testRow.appendChild(testBtn);
       testRow.appendChild(testResult);
       form.appendChild(testRow);
-
+ 
       list.appendChild(form);
     });
   }
-
+ 
   document.getElementById('addHiveBtn').onclick = function () {
     var color = PALETTE[draftHives.length % PALETTE.length];
     draftHives.push({ id: 'h' + Date.now(), name: 'รังที่ ' + (draftHives.length + 1), url: '', color: color });
@@ -821,8 +937,11 @@
   document.getElementById('cancelBtn').onclick = closeDrawer;
   document.getElementById('scrim').onclick = closeDrawer;
   document.getElementById('settingsBtn').onclick = openDrawer;
-
+ 
   // ---------- range toggle ----------
+  function toLocalInputValue(d) {
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
   document.getElementById('rangeToggle').addEventListener('click', function (e) {
     var btn = e.target.closest('button[data-range]');
     if (!btn) return;
@@ -830,9 +949,32 @@
     Array.prototype.forEach.call(document.querySelectorAll('#rangeToggle button'), function (b) {
       b.classList.toggle('active', b === btn);
     });
+    var customBox = document.getElementById('customRange');
+    if (state.range === 'custom') {
+      customBox.classList.add('show');
+      if (!state.customFrom || !state.customTo) {
+        var bounds = getDataBounds();
+        if (bounds.min && bounds.max) {
+          state.customFrom = bounds.min;
+          state.customTo = bounds.max;
+          document.getElementById('customFrom').value = toLocalInputValue(bounds.min);
+          document.getElementById('customTo').value = toLocalInputValue(bounds.max);
+        }
+      }
+    } else {
+      customBox.classList.remove('show');
+    }
     renderCharts();
   });
-
+  document.getElementById('customFrom').addEventListener('change', function (e) {
+    var d = e.target.value ? new Date(e.target.value) : null;
+    if (d && !isNaN(d.getTime())) { state.customFrom = d; renderCharts(); }
+  });
+  document.getElementById('customTo').addEventListener('change', function (e) {
+    var d = e.target.value ? new Date(e.target.value) : null;
+    if (d && !isNaN(d.getTime())) { state.customTo = d; renderCharts(); }
+  });
+ 
   // ---------- theme toggle ----------
   applyTheme(loadTheme());
   document.getElementById('themeBtn').onclick = function () {
@@ -844,10 +986,10 @@
     } catch (e) {}
     renderCharts();
   };
-
+ 
   // ---------- refresh controls ----------
   document.getElementById('refreshBtn').onclick = refreshAll;
-
+ 
   // ---------- boot ----------
   refreshAll();
   setInterval(refreshAll, 5 * 60 * 1000);
