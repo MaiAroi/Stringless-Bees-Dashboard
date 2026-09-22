@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ชันโรงวอทช์ — แดชบอร์ดตรวจวัดรังชันโรง</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+
+    --bg: #FBF3DD;
+    --surface: #FFFDF6;
+    --surface-2: #F3E8CC;
+    --ink: #2B2013;
+    --ink-soft: #6B5E45;
+    --line: #DCCBA0;
+    --amber: #C7861E;
+    --amber-ink: #7A5410;
+    --moss: #52713C;
+    --teal: #3A7472;
+    --clay: #A44F31;
+    --warn: #A6431F;
+    --shadow: none;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --bg: #191309;
+      --surface: #221A0F;
+      --surface-2: #2C2213;
+      --ink: #F3E9D2;
+      --ink-soft: #C4B492;
+      --line: #46381F;
+      --amber: #E3A93B;
+      --amber-ink: #F6D68A;
+      --moss: #8AAE6E;
+      --teal: #6BB0AD;
+      --clay: #D07C57;
+      --warn: #E08A5C;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #191309;
+    --surface: #221A0F;
+    --surface-2: #2C2213;
+    --ink: #F3E9D2;
+    --ink-soft: #C4B492;
+    --line: #46381F;
+    --amber: #E3A93B;
+    --amber-ink: #F6D68A;
+    --moss: #8AAE6E;
+    --teal: #6BB0AD;
+    --clay: #D07C57;
+    --warn: #E08A5C;
+  }
+
+  * { box-sizing: inherit; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, .display { font-family: 'Fraunces', Georgia, serif; }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px 64px; }
+
+  /* ---------- Header ---------- */
+  .topbar {
+    position: relative;
+    padding: 28px 20px 26px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .hexfield {
+    position: absolute; inset: 0;
+    opacity: .35;
+    pointer-events: none;
+  }
+  .topbar-inner {
+    max-width: 980px; margin: 0 auto;
+    position: relative;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .brand h1 { margin: 0; font-size: clamp(28px, 5vw, 38px); font-weight: 600; letter-spacing: -0.01em; }
+  .brand p { margin: 6px 0 0; color: var(--ink-soft); font-size: 14.5px; max-width: 46ch; line-height: 1.5; }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .status-line { font-size: 13px; color: var(--ink-soft); text-align: right; margin-right: 4px; }
+  .status-line strong { color: var(--ink); font-weight: 600; }
+
+  button.iconbtn {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  button.iconbtn:hover { border-color: var(--amber); }
+  button.iconbtn:active { transform: scale(0.94); }
+  button.iconbtn.spinning svg { animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- Hive grid ---------- */
+  .section-head { margin: 40px 0 16px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .section-head h2 { margin: 0; font-size: 21px; font-weight: 600; }
+  .section-head .caption { color: var(--ink-soft); font-size: 13.5px; }
+
+  .hive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 18px;
+  }
+  .hive-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: none;
+    padding: 30px 18px 20px;
+    position: relative;
+  }
+  .hex-cap {
+    position: absolute; top: -20px; left: 18px;
+    width: 40px; height: 34px;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 14px; font-family: 'Fraunces', serif;
+  }
+  .hive-name { margin: 0 0 2px; font-size: 17px; font-weight: 600; }
+  .hive-meta { font-size: 12px; color: var(--ink-soft); margin-bottom: 16px; }
+  .hive-meta.stale { color: var(--warn); }
+  .reading { display: flex; align-items: baseline; justify-content: space-between; padding: 9px 0; border-top: 1px dashed var(--line); }
+  .reading:first-of-type { border-top: none; }
+  .reading .label { font-size: 12.5px; color: var(--ink-soft); }
+  .reading .value { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; }
+  .reading .delta { font-size: 11.5px; margin-left: 6px; font-family: 'Inter', sans-serif; font-weight: 600; }
+  .delta.up { color: var(--moss); }
+  .delta.down { color: var(--clay); }
+
+  .hive-empty, .hive-error {
+    font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; padding: 6px 0 4px;
+  }
+  .hive-error { color: var(--warn); }
+  .linklike {
+    background: none; border: none; color: var(--amber-ink); text-decoration: underline;
+    cursor: pointer; font-size: 13.5px; padding: 0; font-family: inherit;
+  }
+
+  /* ---------- Charts ---------- */
+  .range-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .range-toggle button {
+    border: none; background: var(--surface); color: var(--ink-soft);
+    font-size: 13px; font-weight: 600; padding: 7px 14px; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+  .range-toggle button.active { background: var(--amber); color: #1c1406; }
+
+  .chart-block { margin-top: 26px; background: var(--surface); border: 1px solid var(--line); padding: 20px 18px 14px; }
+  .chart-block h3 { margin: 0 0 2px; font-size: 16px; font-weight: 600; }
+  .chart-block .caption { margin: 0 0 14px; color: var(--ink-soft); font-size: 13px; }
+  .chart-block canvas { max-height: 260px; }
+  .legend-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-soft); }
+  .legend-dot { width: 9px; height: 9px; border-radius: 2px; }
+
+  footer { margin-top: 44px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.6; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  /* ---------- Settings drawer ---------- */
+  .scrim {
+    position: fixed; inset: 0; background: rgba(20, 15, 5, 0.45);
+    opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 20;
+  }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 92vw);
+    background: var(--surface); border-left: 1px solid var(--line);
+    transform: translateX(100%); transition: transform .25s ease;
+    z-index: 21; overflow-y: auto;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-inner { padding: 22px 20px 40px; }
+  .drawer-inner h2 { margin: 0 0 4px; font-size: 20px; }
+  .drawer-inner .caption { color: var(--ink-soft); font-size: 13px; margin: 0 0 20px; line-height: 1.5; }
+
+  .hive-form {
+    border: 1px solid var(--line); padding: 14px; margin-bottom: 14px; position: relative;
+  }
+  .hive-form label { display: block; font-size: 12px; color: var(--ink-soft); margin: 10px 0 4px; }
+  .hive-form label:first-of-type { margin-top: 0; }
+  .hive-form input[type=text] {
+    width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--surface-2); color: var(--ink); font-family: inherit; font-size: 13.5px;
+  }
+  .hive-form input[type=text]:focus { outline: 2px solid var(--amber); outline-offset: 1px; }
+  .hive-form-top { display: flex; align-items: center; justify-content: space-between; }
+  .swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; margin-right: 8px; vertical-align: -1px; }
+  .removebtn {
+    border: none; background: none; color: var(--warn); font-size: 12px; cursor: pointer;
+    text-decoration: underline; padding: 0;
+  }
+  .test-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .testbtn {
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+    font-size: 12.5px; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-family: inherit;
+  }
+  .test-result { font-size: 12px; }
+  .test-result.ok { color: var(--moss); }
+  .test-result.fail { color: var(--warn); }
+
+  .addbtn {
+    width: 100%; padding: 12px; border: 1px dashed var(--line); background: none;
+    color: var(--ink-soft); border-radius: 6px; cursor: pointer; font-size: 13.5px; font-family: inherit;
+    margin-bottom: 18px;
+  }
+  .addbtn:hover { border-color: var(--amber); color: var(--amber-ink); }
+
+  .drawer-actions { display: flex; gap: 10px; margin-top: 6px; }
+  .btn-primary, .btn-secondary {
+    flex: 1; padding: 11px; border-radius: 8px; font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit; border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--amber); color: #1c1406; }
+  .btn-secondary { background: none; border-color: var(--line); color: var(--ink); }
+
+  .field-row { display: flex; gap: 10px; }
+  .field-row > div { flex: 1; }
+
+  @media (max-width: 560px) {
+    .status-line { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <svg class="hexfield" viewBox="0 0 400 140" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <pattern id="hexpat" width="44" height="76" patternUnits="userSpaceOnUse" patternTransform="translate(0,-10)">
+        <polygon points="22,0 44,12.7 44,38.1 22,50.8 0,38.1 0,12.7" fill="none" stroke="var(--amber)" stroke-width="1"/>
+        <polygon points="22,25.4 44,38.1 44,63.5 22,76.2 0,63.5 0,38.1" fill="none" stroke="var(--amber)" stroke-width="1"/>
+      </pattern>
+    </defs>
+    <rect width="400" height="140" fill="url(#hexpat)" />
+  </svg>
+  <div class="topbar-inner">
+    <div class="brand">
+      <h1>ชันโรงวอทช์</h1>
+      <p>แดชบอร์ดตรวจวัดรังชันโรงแบบใกล้เรียลไทม์ — อุณหภูมิ ความชื้น และน้ำหนัก จากเซนเซอร์ที่บันทึกลง Google ชีตทุกชั่วโมง</p>
+    </div>
+    <div class="topbar-actions">
+      <div class="status-line" id="statusLine">กำลังโหลดข้อมูล…</div>
+      <button class="iconbtn" id="themeBtn" title="สลับโหมดสี" aria-label="สลับโหมดสี">
+        <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36A5.5 5.5 0 0 1 12.36 3.1 9.04 9.04 0 0 0 12 3Z"/></svg>
+      </button>
+      <button class="iconbtn" id="refreshBtn" title="รีเฟรชข้อมูล" aria-label="รีเฟรชข้อมูล">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v6h-6"/></svg>
+      </button>
+      <button class="iconbtn" id="settingsBtn" title="ตั้งค่าลิงก์รัง" aria-label="ตั้งค่าลิงก์รัง">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="section-head">
+    <h2>ค่าล่าสุดรายรัง</h2>
+    <span class="caption" id="hiveCountCaption"></span>
+  </div>
+  <div class="hive-grid" id="hiveGrid"></div>
+
+  <div class="section-head">
+    <h2>แนวโน้มข้อมูล</h2>
+    <div class="range-toggle" id="rangeToggle">
+      <button data-range="24h" class="active">24 ชม.</button>
+      <button data-range="7d">7 วัน</button>
+      <button data-range="all">ทั้งหมด</button>
+    </div>
+  </div>
+
+  <div class="chart-block">
+    <h3>อุณหภูมิ</h3>
+    <p class="caption">บ่งบอกการควบคุมอุณหภูมิภายในรังของชันโรง — ค่าที่แกว่งมากผิดปกติอาจหมายถึงรังอ่อนแอหรือมีสิ่งรบกวน</p>
+    <canvas id="chartTemp"></canvas>
+    <div class="legend-row" id="legendTemp"></div>
+  </div>
+
+  <div class="chart-block">
+    <h3>ความชื้นสัมพัทธ์</h3>
+    <p class="caption">ความชื้นในรังสัมพันธ์กับการเก็บรักษาน้ำหวานและไข่อ่อน — เปลี่ยนแปลงตามสภาพอากาศภายนอกและกิจกรรมของผึ้ง</p>
+    <canvas id="chartHum"></canvas>
+    <div class="legend-row" id="legendHum"></div>
+  </div>
+
+  <div class="chart-block">
+    <h3>น้ำหนักรัง</h3>
+    <p class="caption">น้ำหนักที่เพิ่มขึ้นสะท้อนการหาอาหารและสะสมน้ำหวาน ส่วนที่ลดลงกะทันหันอาจบ่งชี้การทิ้งรังหรือถูกรบกวน</p>
+    <canvas id="chartWeight"></canvas>
+    <div class="legend-row" id="legendWeight"></div>
+  </div>
+
+  <footer>
+    ดึงข้อมูลตรงจาก Google ชีตของแต่ละรัง (ต้องแชร์แบบ "ทุกคนที่มีลิงก์ดูได้") รีเฟรชอัตโนมัติทุก 5 นาที การตั้งค่าลิงก์ถูกบันทึกไว้ในเบราว์เซอร์นี้เท่านั้น
+  </footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="ตั้งค่าลิงก์รัง">
+  <div class="drawer-inner">
+    <h2>ตั้งค่าลิงก์รัง</h2>
+    <p class="caption">เพิ่มลิงก์ Google ชีตของแต่ละรังได้ไม่จำกัดจำนวน แต่ละชีตต้องมีคอลัมน์เรียงกันเป็น วันที่/เวลา, อุณหภูมิ, ความชื้น, น้ำหนัก และต้องแชร์เป็น "ทุกคนที่มีลิงก์ดูได้"</p>
+    <div id="hiveFormList"></div>
+    <button class="addbtn" id="addHiveBtn">+ เพิ่มรังใหม่</button>
+    <div class="drawer-actions">
+      <button class="btn-secondary" id="cancelBtn">ยกเลิก</button>
+      <button class="btn-primary" id="saveBtn">บันทึกและรีเฟรช</button>
+    </div>
+  </div>
+</aside>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = 'chanrong-hives-v1';
+  var THEME_KEY = 'chanrong-theme';
+  var PALETTE = ['#C7861E', '#52713C', '#3A7472', '#A44F31', '#7A5FA8', '#3B6E9C'];
+
+  var DEFAULT_HIVES = [
+    { id: 'h1', name: 'รังที่ 1', url: 'https://docs.google.com/spreadsheets/d/1Z3stbTTjkv_cIfGvNMidheTTAc7tMGKxvTJidm54HEM/edit?usp=sharing', color: PALETTE[0] },
+    { id: 'h2', name: 'รังที่ 2', url: '', color: PALETTE[1] },
+    { id: 'h3', name: 'รังที่ 3', url: '', color: PALETTE[2] }
+  ];
+
+  var state = {
+    hives: loadHives(),
+    data: {},       // id -> { rows, error, fetchedAt }
+    range: '24h',
+    lastRefresh: null
+  };
+
+  var charts = { temp: null, hum: null, weight: null };
+
+  // ---------- persistence ----------
+  function loadHives() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length) return parsed;
+      }
+    } catch (e) {}
+    return DEFAULT_HIVES.map(function (h) { return Object.assign({}, h); });
+  }
+  function saveHives() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.hives)); } catch (e) {}
+  }
+  function loadTheme() {
+    try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
+  }
+  function applyTheme(mode) {
+    if (mode === 'light' || mode === 'dark') {
+      document.documentElement.setAttribute('data-theme', mode);
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }
+
+  // ---------- google sheet parsing ----------
+  function extractSheetId(url) {
+    var m = (url || '').match(/\/d\/([a-zA-Z0-9-_]+)/);
+    return m ? m[1] : null;
+  }
+  function extractGid(url) {
+    var m = (url || '').match(/[#&?]gid=(\d+)/);
+    return m ? m[1] : null;
+  }
+  function buildGvizUrl(url) {
+    var id = extractSheetId(url);
+    if (!id) return null;
+    var gid = extractGid(url);
+    var u = 'https://docs.google.com/spreadsheets/d/' + id + '/gviz/tq?tqx=out:json';
+    if (gid) u += '&gid=' + gid;
+    return u;
+  }
+  function parseGvizText(text) {
+    var m = text.match(/setResponse\(([\s\S]*)\);?\s*$/);
+    if (!m) throw new Error('รูปแบบข้อมูลไม่ถูกต้อง');
+    var json = JSON.parse(m[1]);
+    if (json.status === 'error') {
+      var e = (json.errors && json.errors[0]) || {};
+      throw new Error(e.detailed_message || e.message || 'เชื่อมต่อไม่สำเร็จ');
+    }
+    return json.table;
+  }
+  function cellVal(cell) { return cell ? cell.v : null; }
+  function parseDateCell(v) {
+    if (v == null) return null;
+    if (typeof v === 'string') {
+      var m1 = v.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)$/);
+      if (m1) return new Date(+m1[1], +m1[2], +m1[3], +(m1[4] || 0), +(m1[5] || 0), +(m1[6] || 0));
+      var m2 = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+      if (m2) return new Date(+m2[3], +m2[2] - 1, +m2[1], +m2[4], +m2[5], +(m2[6] || 0));
+      var d = new Date(v);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return null;
+  }
+  function toNumber(v) {
+    if (v == null) return NaN;
+    if (typeof v === 'number') return v;
+    var n = parseFloat(String(v).replace(',', '.'));
+    return n;
+  }
+
+  function fetchHive(hive) {
+    if (!hive.url) return Promise.resolve({ rows: [], error: null, empty: true });
+    var gurl = buildGvizUrl(hive.url);
+    if (!gurl) return Promise.resolve({ rows: [], error: 'ลิงก์ Google ชีตไม่ถูกต้อง' });
+    return fetch(gurl, { cache: 'no-store' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('เข้าถึงชีตไม่ได้ (HTTP ' + res.status + ')');
+        return res.text();
+      })
+      .then(function (text) {
+        var table = parseGvizText(text);
+        var rows = [];
+        (table.rows || []).forEach(function (r) {
+          var c = r.c || [];
+          var date = parseDateCell(cellVal(c[0]));
+          var temp = toNumber(cellVal(c[1]));
+          var hum = toNumber(cellVal(c[2]));
+          var weight = toNumber(cellVal(c[3]));
+          if (!date || isNaN(temp) && isNaN(hum) && isNaN(weight)) return;
+          rows.push({ date: date, temp: temp, hum: hum, weight: weight });
+        });
+        rows.sort(function (a, b) { return a.date - b.date; });
+        return { rows: rows, error: null };
+      })
+      .catch(function (err) {
+        return { rows: [], error: err.message || 'โหลดข้อมูลไม่สำเร็จ — ตรวจสอบว่าแชร์ชีตแบบ "ทุกคนที่มีลิงก์ดูได้"' };
+      });
+  }
+
+  function refreshAll() {
+    var btn = document.getElementById('refreshBtn');
+    btn.classList.add('spinning');
+    document.getElementById('statusLine').textContent = 'กำลังอัปเดตข้อมูล…';
+    var jobs = state.hives.map(function (h) {
+      return fetchHive(h).then(function (res) { state.data[h.id] = res; });
+    });
+    return Promise.all(jobs).then(function () {
+      state.lastRefresh = new Date();
+      btn.classList.remove('spinning');
+      renderAll();
+    });
+  }
+
+  // ---------- formatting ----------
+  function fmtTime(d) {
+    return pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function fmtDay(d) {
+    return pad(d.getDate()) + '/' + pad(d.getMonth() + 1);
+  }
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function relTime(d) {
+    if (!d) return '';
+    var s = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (s < 60) return 'เมื่อสักครู่';
+    if (s < 3600) return Math.floor(s / 60) + ' นาทีที่แล้ว';
+    if (s < 86400) return Math.floor(s / 3600) + ' ชม.ที่แล้ว';
+    return Math.floor(s / 86400) + ' วันที่แล้ว';
+  }
+
+  // ---------- render: hive cards ----------
+  function renderHiveGrid() {
+    var grid = document.getElementById('hiveGrid');
+    grid.innerHTML = '';
+    document.getElementById('hiveCountCaption').textContent = state.hives.length + ' รัง';
+
+    state.hives.forEach(function (hive, idx) {
+      var panel = document.createElement('div');
+      panel.className = 'hive-panel';
+      panel.style.borderTopColor = hive.color;
+
+      var cap = document.createElement('div');
+      cap.className = 'hex-cap';
+      cap.style.background = hive.color;
+      cap.textContent = idx + 1;
+      panel.appendChild(cap);
+
+      var name = document.createElement('p');
+      name.className = 'hive-name';
+      name.textContent = hive.name || ('รังที่ ' + (idx + 1));
+      panel.appendChild(name);
+
+      var res = state.data[hive.id];
+
+      if (!hive.url) {
+        var meta = document.createElement('div');
+        meta.className = 'hive-meta';
+        meta.textContent = 'ยังไม่ได้ตั้งค่าลิงก์';
+        panel.appendChild(meta);
+        var empty = document.createElement('div');
+        empty.className = 'hive-empty';
+        empty.innerHTML = 'เพิ่มลิงก์ Google ชีตของรังนี้ได้ที่ ';
+        var link = document.createElement('button');
+        link.className = 'linklike';
+        link.textContent = 'ตั้งค่า';
+        link.onclick = openDrawer;
+        empty.appendChild(link);
+        panel.appendChild(empty);
+        grid.appendChild(panel);
+        return;
+      }
+
+      if (!res) {
+        var loading = document.createElement('div');
+        loading.className = 'hive-meta';
+        loading.textContent = 'กำลังโหลด…';
+        panel.appendChild(loading);
+        grid.appendChild(panel);
+        return;
+      }
+
+      if (res.error) {
+        var meta2 = document.createElement('div');
+        meta2.className = 'hive-meta stale';
+        meta2.textContent = 'เชื่อมต่อไม่สำเร็จ';
+        panel.appendChild(meta2);
+        var err = document.createElement('div');
+        err.className = 'hive-error';
+        err.textContent = res.error;
+        panel.appendChild(err);
+        grid.appendChild(panel);
+        return;
+      }
+
+      if (!res.rows.length) {
+        var meta3 = document.createElement('div');
+        meta3.className = 'hive-meta';
+        meta3.textContent = 'เชื่อมต่อสำเร็จ';
+        panel.appendChild(meta3);
+        var empty2 = document.createElement('div');
+        empty2.className = 'hive-empty';
+        empty2.textContent = 'ยังไม่มีข้อมูลจากเซนเซอร์ในชีตนี้';
+        panel.appendChild(empty2);
+        grid.appendChild(panel);
+        return;
+      }
+
+      var last = res.rows[res.rows.length - 1];
+      var prev = res.rows.length > 1 ? res.rows[res.rows.length - 2] : null;
+      var stale = (Date.now() - last.date.getTime()) > 2 * 3600 * 1000;
+
+      var meta = document.createElement('div');
+      meta.className = 'hive-meta' + (stale ? ' stale' : '');
+      meta.textContent = (stale ? '⚠ ' : '') + 'อัปเดต ' + fmtDay(last.date) + ' ' + fmtTime(last.date) + (stale ? ' (ข้อมูลอาจค้าง)' : '');
+      panel.appendChild(meta);
+
+      panel.appendChild(readingRow('อุณหภูมิ', last.temp, prev ? prev.temp : null, '°C'));
+      panel.appendChild(readingRow('ความชื้น', last.hum, prev ? prev.hum : null, '%'));
+      panel.appendChild(readingRow('น้ำหนัก', last.weight, prev ? prev.weight : null, ' ก.'));
+
+      grid.appendChild(panel);
+    });
+  }
+
+  function readingRow(label, val, prevVal, unit) {
+    var row = document.createElement('div');
+    row.className = 'reading';
+    var l = document.createElement('span');
+    l.className = 'label';
+    l.textContent = label;
+    row.appendChild(l);
+    var v = document.createElement('span');
+    v.className = 'value';
+    if (isNaN(val)) {
+      v.textContent = '—';
+    } else {
+      v.textContent = round1(val) + unit;
+      if (prevVal != null && !isNaN(prevVal) && prevVal !== val) {
+        var d = document.createElement('span');
+        var diff = val - prevVal;
+        d.className = 'delta ' + (diff > 0 ? 'up' : 'down');
+        d.textContent = (diff > 0 ? '▲' : '▼') + Math.abs(round1(diff));
+        v.appendChild(d);
+      }
+    }
+    row.appendChild(v);
+    return row;
+  }
+  function round1(n) { return Math.round(n * 10) / 10; }
+
+  // ---------- render: charts ----------
+  function rangeMs() {
+    if (state.range === '24h') return 24 * 3600 * 1000;
+    if (state.range === '7d') return 7 * 24 * 3600 * 1000;
+    return null;
+  }
+  function filteredRows(hiveId) {
+    var res = state.data[hiveId];
+    if (!res || !res.rows) return [];
+    var ms = rangeMs();
+    if (ms == null) return decimate(res.rows, 400);
+    var cutoff = Date.now() - ms;
+    return decimate(res.rows.filter(function (r) { return r.date.getTime() >= cutoff; }), 400);
+  }
+  function decimate(rows, max) {
+    if (rows.length <= max) return rows;
+    var step = Math.ceil(rows.length / max);
+    var out = [];
+    for (var i = 0; i < rows.length; i += step) out.push(rows[i]);
+    if (out[out.length - 1] !== rows[rows.length - 1]) out.push(rows[rows.length - 1]);
+    return out;
+  }
+  function labelFor(d) {
+    return state.range === 'all' ? fmtDay(d) : fmtDay(d) + ' ' + fmtTime(d);
+  }
+
+  function buildDatasets(key) {
+    // union of all timestamps across hives, sorted
+    var allDates = [];
+    var perHive = {};
+    state.hives.forEach(function (h) {
+      var rows = filteredRows(h.id);
+      perHive[h.id] = rows;
+      rows.forEach(function (r) { allDates.push(r.date.getTime()); });
+    });
+    allDates = Array.from(new Set(allDates)).sort(function (a, b) { return a - b; });
+    var labels = allDates.map(function (t) { return labelFor(new Date(t)); });
+
+    var datasets = state.hives.filter(function (h) { return h.url; }).map(function (h) {
+      var rows = perHive[h.id];
+      var byTime = {};
+      rows.forEach(function (r) { byTime[r.date.getTime()] = r[key]; });
+      var data = allDates.map(function (t) {
+        var v = byTime[t];
+        return (v == null || isNaN(v)) ? null : v;
+      });
+      return {
+        label: h.name,
+        data: data,
+        borderColor: h.color,
+        backgroundColor: h.color,
+        spanGaps: true,
+        tension: 0.25,
+        pointRadius: allDates.length > 60 ? 0 : 2,
+        borderWidth: 2
+      };
+    });
+    return { labels: labels, datasets: datasets };
+  }
+
+  function chartOptions() {
+    var gridColor = getComputedStyle(document.documentElement).getPropertyValue('--line').trim();
+    var inkColor = getComputedStyle(document.documentElement).getPropertyValue('--ink-soft').trim();
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' } } },
+      scales: {
+        x: { ticks: { color: inkColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { family: 'Inter', size: 11 } }, grid: { color: gridColor } },
+        y: { ticks: { color: inkColor, font: { family: 'Inter', size: 11 } }, grid: { color: gridColor } }
+      }
+    };
+  }
+
+  function renderChart(canvasId, legendId, key, chartKey) {
+    var ctx = document.getElementById(canvasId).getContext('2d');
+    var built = buildDatasets(key);
+    if (charts[chartKey]) charts[chartKey].destroy();
+    charts[chartKey] = new Chart(ctx, { type: 'line', data: { labels: built.labels, datasets: built.datasets }, options: chartOptions() });
+
+    var legend = document.getElementById(legendId);
+    legend.innerHTML = '';
+    built.datasets.forEach(function (ds) {
+      var item = document.createElement('div');
+      item.className = 'legend-item';
+      var dot = document.createElement('span');
+      dot.className = 'legend-dot';
+      dot.style.background = ds.borderColor;
+      item.appendChild(dot);
+      var txt = document.createElement('span');
+      txt.textContent = ds.label;
+      item.appendChild(txt);
+      legend.appendChild(item);
+    });
+  }
+
+  function renderCharts() {
+    renderChart('chartTemp', 'legendTemp', 'temp', 'temp');
+    renderChart('chartHum', 'legendHum', 'hum', 'hum');
+    renderChart('chartWeight', 'legendWeight', 'weight', 'weight');
+  }
+
+  function renderStatus() {
+    var el = document.getElementById('statusLine');
+    if (state.lastRefresh) {
+      el.innerHTML = 'อัปเดตล่าสุด <strong>' + relTime(state.lastRefresh) + '</strong>';
+    }
+  }
+
+  function renderAll() {
+    renderHiveGrid();
+    renderCharts();
+    renderStatus();
+  }
+
+  // ---------- settings drawer ----------
+  var draftHives = [];
+  function openDrawer() {
+    draftHives = state.hives.map(function (h) { return Object.assign({}, h); });
+    renderDrawerForms();
+    document.getElementById('scrim').classList.add('open');
+    document.getElementById('drawer').classList.add('open');
+  }
+  function closeDrawer() {
+    document.getElementById('scrim').classList.remove('open');
+    document.getElementById('drawer').classList.remove('open');
+  }
+  function renderDrawerForms() {
+    var list = document.getElementById('hiveFormList');
+    list.innerHTML = '';
+    draftHives.forEach(function (hive, idx) {
+      var form = document.createElement('div');
+      form.className = 'hive-form';
+
+      var top = document.createElement('div');
+      top.className = 'hive-form-top';
+      var title = document.createElement('span');
+      title.innerHTML = '<span class="swatch" style="background:' + hive.color + '"></span>รัง #' + (idx + 1);
+      top.appendChild(title);
+      if (draftHives.length > 1) {
+        var rm = document.createElement('button');
+        rm.className = 'removebtn';
+        rm.textContent = 'ลบ';
+        rm.onclick = function () { draftHives.splice(idx, 1); renderDrawerForms(); };
+        top.appendChild(rm);
+      }
+      form.appendChild(top);
+
+      var nameLabel = document.createElement('label');
+      nameLabel.textContent = 'ชื่อรัง';
+      form.appendChild(nameLabel);
+      var nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = hive.name;
+      nameInput.oninput = function () { hive.name = nameInput.value; };
+      form.appendChild(nameInput);
+
+      var urlLabel = document.createElement('label');
+      urlLabel.textContent = 'ลิงก์ Google ชีต';
+      form.appendChild(urlLabel);
+      var urlInput = document.createElement('input');
+      urlInput.type = 'text';
+      urlInput.placeholder = 'https://docs.google.com/spreadsheets/d/…';
+      urlInput.value = hive.url;
+      urlInput.oninput = function () { hive.url = urlInput.value.trim(); };
+      form.appendChild(urlInput);
+
+      var testRow = document.createElement('div');
+      testRow.className = 'test-row';
+      var testBtn = document.createElement('button');
+      testBtn.className = 'testbtn';
+      testBtn.type = 'button';
+      testBtn.textContent = 'ทดสอบลิงก์';
+      var testResult = document.createElement('span');
+      testResult.className = 'test-result';
+      testBtn.onclick = function () {
+        testResult.className = 'test-result';
+        testResult.textContent = 'กำลังทดสอบ…';
+        fetchHive(hive).then(function (res) {
+          if (res.error) {
+            testResult.className = 'test-result fail';
+            testResult.textContent = '✕ ' + res.error;
+          } else if (res.empty) {
+            testResult.className = 'test-result fail';
+            testResult.textContent = '✕ ยังไม่ได้ใส่ลิงก์';
+          } else {
+            testResult.className = 'test-result ok';
+            testResult.textContent = '✓ เชื่อมต่อสำเร็จ (' + res.rows.length + ' แถว)';
+          }
+        });
+      };
+      testRow.appendChild(testBtn);
+      testRow.appendChild(testResult);
+      form.appendChild(testRow);
+
+      list.appendChild(form);
+    });
+  }
+
+  document.getElementById('addHiveBtn').onclick = function () {
+    var color = PALETTE[draftHives.length % PALETTE.length];
+    draftHives.push({ id: 'h' + Date.now(), name: 'รังที่ ' + (draftHives.length + 1), url: '', color: color });
+    renderDrawerForms();
+  };
+  document.getElementById('saveBtn').onclick = function () {
+    state.hives = draftHives;
+    saveHives();
+    closeDrawer();
+    refreshAll();
+  };
+  document.getElementById('cancelBtn').onclick = closeDrawer;
+  document.getElementById('scrim').onclick = closeDrawer;
+  document.getElementById('settingsBtn').onclick = openDrawer;
+
+  // ---------- range toggle ----------
+  document.getElementById('rangeToggle').addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-range]');
+    if (!btn) return;
+    state.range = btn.getAttribute('data-range');
+    Array.prototype.forEach.call(document.querySelectorAll('#rangeToggle button'), function (b) {
+      b.classList.toggle('active', b === btn);
+    });
+    renderCharts();
+  });
+
+  // ---------- theme toggle ----------
+  applyTheme(loadTheme());
+  document.getElementById('themeBtn').onclick = function () {
+    var current = document.documentElement.getAttribute('data-theme');
+    var next = current === 'dark' ? 'light' : (current === 'light' ? null : 'dark');
+    applyTheme(next);
+    try {
+      if (next) localStorage.setItem(THEME_KEY, next); else localStorage.removeItem(THEME_KEY);
+    } catch (e) {}
+    renderCharts();
+  };
+
+  // ---------- refresh controls ----------
+  document.getElementById('refreshBtn').onclick = refreshAll;
+
+  // ---------- boot ----------
+  refreshAll();
+  setInterval(refreshAll, 5 * 60 * 1000);
+  setInterval(renderStatus, 30 * 1000);
+})();
+</script>
+</body>
+</html>
