@@ -27,6 +27,7 @@
     --teal: #3A7472;
     --clay: #A44F31;
     --warn: #A6431F;
+    --caramel: #B0793D;
  
     /* glass / bubble tokens */
     --glass: rgba(255, 253, 246, 0.5);
@@ -51,6 +52,7 @@
       --teal: #6BB0AD;
       --clay: #D07C57;
       --warn: #E08A5C;
+      --caramel: #CB9457;
  
       --glass: rgba(38, 29, 16, 0.5);
       --glass-strong: rgba(44, 34, 19, 0.72);
@@ -74,6 +76,7 @@
     --teal: #6BB0AD;
     --clay: #D07C57;
     --warn: #E08A5C;
+    --caramel: #CB9457;
  
     --glass: rgba(38, 29, 16, 0.5);
     --glass-strong: rgba(44, 34, 19, 0.72);
@@ -182,7 +185,7 @@
   .reading { display: flex; align-items: baseline; justify-content: space-between; padding: 9px 0; border-top: 1px dashed var(--glass-border); }
   .reading:first-of-type { border-top: none; }
   .reading .label { font-size: 12.5px; color: var(--ink-soft); }
-  .reading .value { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; }
+  .reading .value { font-family: 'Inter', system-ui, sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
   .reading .delta { font-size: 11.5px; margin-left: 6px; font-family: 'Inter', sans-serif; font-weight: 600; }
   .delta.up { color: var(--moss); }
   .delta.down { color: var(--clay); }
@@ -510,7 +513,7 @@
  
       var cap = document.createElement('div');
       cap.className = 'hex-cap';
-      cap.style.background = hive.color;
+      cap.style.background = 'var(--caramel)';
       cap.textContent = idx + 1;
       panel.appendChild(cap);
  
