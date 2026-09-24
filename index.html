@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
   :root {
     box-sizing: border-box;
@@ -197,40 +196,6 @@
     cursor: pointer; font-size: 13.5px; padding: 0; font-family: inherit;
   }
  
-  /* ---------- Charts ---------- */
-  .range-toggle { display: inline-flex; border: 1px solid var(--glass-border); border-radius: 999px; overflow: hidden; background: var(--glass); backdrop-filter: blur(10px); }
-  .range-toggle button {
-    border: none; background: transparent; color: var(--ink-soft);
-    font-size: 13px; font-weight: 600; padding: 7px 14px; cursor: pointer;
-    font-family: 'Inter', sans-serif;
-  }
-  .range-toggle button.active { background: var(--amber); color: #1c1406; border-radius: 999px; }
- 
-  .custom-range {
-    display: none;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin: 10px 0 0;
-    padding: 10px 12px;
-    border-radius: 16px;
-  }
-  .custom-range.show { display: flex; }
-  .custom-range label { font-size: 12px; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
-  .custom-range input[type=datetime-local] {
-    border: 1px solid var(--glass-border); border-radius: 10px; background: var(--surface-2);
-    color: var(--ink); font-family: inherit; font-size: 12.5px; padding: 6px 8px;
-  }
-  .custom-range .hint { font-size: 11.5px; color: var(--ink-soft); width: 100%; }
- 
-  .chart-block { margin-top: 26px; padding: 22px 20px 16px; }
-  .chart-block h3 { margin: 0 0 2px; font-size: 16px; font-weight: 600; }
-  .chart-block .caption { margin: 0 0 14px; color: var(--ink-soft); font-size: 13px; }
-  .chart-block canvas { max-height: 260px; }
-  .legend-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; }
-  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-soft); }
-  .legend-dot { width: 9px; height: 9px; border-radius: 2px; }
- 
   footer { margin-top: 44px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.6; padding: 16px 20px; }
  
   /* ---------- Settings drawer ---------- */
@@ -361,46 +326,6 @@
   </div>
   <div class="hive-grid" id="hiveGrid"></div>
  
-  <div class="section-head">
-    <div>
-      <h2>แนวโน้มข้อมูล</h2>
-      <span class="caption">ดูย้อนหลังได้ตั้งแต่เริ่มเก็บข้อมูล — เลือกช่วงสำเร็จรูปหรือกำหนดวันที่เอง</span>
-    </div>
-    <div class="range-toggle" id="rangeToggle">
-      <button data-range="24h" class="active">24 ชม.</button>
-      <button data-range="7d">7 วัน</button>
-      <button data-range="30d">30 วัน</button>
-      <button data-range="all">ทั้งหมด</button>
-      <button data-range="custom">กำหนดเอง</button>
-    </div>
-  </div>
-  <div class="custom-range glass" id="customRange">
-    <span class="hint">เลือกช่วงวันที่-เวลาที่ต้องการย้อนดูประวัติข้อมูล</span>
-    <label>จาก <input type="datetime-local" id="customFrom"></label>
-    <label>ถึง <input type="datetime-local" id="customTo"></label>
-  </div>
- 
-  <div class="chart-block glass">
-    <h3>อุณหภูมิ</h3>
-    <p class="caption">บ่งบอกการควบคุมอุณหภูมิภายในรังของชันโรง — ค่าที่แกว่งมากผิดปกติอาจหมายถึงรังอ่อนแอหรือมีสิ่งรบกวน</p>
-    <canvas id="chartTemp"></canvas>
-    <div class="legend-row" id="legendTemp"></div>
-  </div>
- 
-  <div class="chart-block glass">
-    <h3>ความชื้นสัมพัทธ์</h3>
-    <p class="caption">ความชื้นในรังสัมพันธ์กับการเก็บรักษาน้ำหวานและไข่อ่อน — เปลี่ยนแปลงตามสภาพอากาศภายนอกและกิจกรรมของผึ้ง</p>
-    <canvas id="chartHum"></canvas>
-    <div class="legend-row" id="legendHum"></div>
-  </div>
- 
-  <div class="chart-block glass">
-    <h3>น้ำหนักรัง</h3>
-    <p class="caption">น้ำหนักที่เพิ่มขึ้นสะท้อนการหาอาหารและสะสมน้ำหวาน ส่วนที่ลดลงกะทันหันอาจบ่งชี้การทิ้งรังหรือถูกรบกวน</p>
-    <canvas id="chartWeight"></canvas>
-    <div class="legend-row" id="legendWeight"></div>
-  </div>
- 
   <footer class="glass">
     ดึงข้อมูลตรงจาก Google ชีตของแต่ละรัง (ต้องแชร์แบบ "ทุกคนที่มีลิงก์ดูได้") รีเฟรชอัตโนมัติทุก 5 นาที การตั้งค่าลิงก์ถูกบันทึกไว้ในเบราว์เซอร์นี้เท่านั้น
   </footer>
@@ -437,13 +362,8 @@
   var state = {
     hives: loadHives(),
     data: {},       // id -> { rows, error, fetchedAt }
-    range: '24h',
-    customFrom: null,
-    customTo: null,
     lastRefresh: null
   };
- 
-  var charts = { temp: null, hum: null, weight: null };
  
   // ---------- persistence ----------
   function loadHives() {
@@ -697,132 +617,6 @@
   }
   function round1(n) { return Math.round(n * 10) / 10; }
  
-  // ---------- render: charts ----------
-  function rangeMs() {
-    if (state.range === '24h') return 24 * 3600 * 1000;
-    if (state.range === '7d') return 7 * 24 * 3600 * 1000;
-    if (state.range === '30d') return 30 * 24 * 3600 * 1000;
-    return null;
-  }
-  function getDataBounds() {
-    var min = null, max = null;
-    state.hives.forEach(function (h) {
-      var res = state.data[h.id];
-      if (res && res.rows && res.rows.length) {
-        var first = res.rows[0].date, last = res.rows[res.rows.length - 1].date;
-        if (!min || first < min) min = first;
-        if (!max || last > max) max = last;
-      }
-    });
-    return { min: min, max: max };
-  }
-  function filteredRows(hiveId) {
-    var res = state.data[hiveId];
-    if (!res || !res.rows) return [];
-    if (state.range === 'custom') {
-      var from = state.customFrom ? state.customFrom.getTime() : -Infinity;
-      var to = state.customTo ? state.customTo.getTime() : Infinity;
-      return decimate(res.rows.filter(function (r) { return r.date.getTime() >= from && r.date.getTime() <= to; }), 400);
-    }
-    var ms = rangeMs();
-    if (ms == null) return decimate(res.rows, 400);
-    var cutoff = Date.now() - ms;
-    return decimate(res.rows.filter(function (r) { return r.date.getTime() >= cutoff; }), 400);
-  }
-  function decimate(rows, max) {
-    if (rows.length <= max) return rows;
-    var step = Math.ceil(rows.length / max);
-    var out = [];
-    for (var i = 0; i < rows.length; i += step) out.push(rows[i]);
-    if (out[out.length - 1] !== rows[rows.length - 1]) out.push(rows[rows.length - 1]);
-    return out;
-  }
-  function labelFor(d) {
-    if (state.range === 'all') return fmtDay(d);
-    if (state.range === 'custom') {
-      var span = (state.customFrom && state.customTo) ? (state.customTo.getTime() - state.customFrom.getTime()) : 0;
-      return span > 3 * 24 * 3600 * 1000 ? fmtDay(d) : fmtDay(d) + ' ' + fmtTime(d);
-    }
-    return fmtDay(d) + ' ' + fmtTime(d);
-  }
- 
-  function buildDatasets(key) {
-    // union of all timestamps across hives, sorted
-    var allDates = [];
-    var perHive = {};
-    state.hives.forEach(function (h) {
-      var rows = filteredRows(h.id);
-      perHive[h.id] = rows;
-      rows.forEach(function (r) { allDates.push(r.date.getTime()); });
-    });
-    allDates = Array.from(new Set(allDates)).sort(function (a, b) { return a - b; });
-    var labels = allDates.map(function (t) { return labelFor(new Date(t)); });
- 
-    var datasets = state.hives.filter(function (h) { return h.url; }).map(function (h) {
-      var rows = perHive[h.id];
-      var byTime = {};
-      rows.forEach(function (r) { byTime[r.date.getTime()] = r[key]; });
-      var data = allDates.map(function (t) {
-        var v = byTime[t];
-        return (v == null || isNaN(v)) ? null : v;
-      });
-      return {
-        label: h.name,
-        data: data,
-        borderColor: h.color,
-        backgroundColor: h.color,
-        spanGaps: true,
-        tension: 0.25,
-        pointRadius: allDates.length > 60 ? 0 : 2,
-        borderWidth: 2
-      };
-    });
-    return { labels: labels, datasets: datasets };
-  }
- 
-  function chartOptions() {
-    var gridColor = getComputedStyle(document.documentElement).getPropertyValue('--line').trim();
-    var inkColor = getComputedStyle(document.documentElement).getPropertyValue('--ink-soft').trim();
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'nearest', axis: 'x', intersect: false },
-      plugins: { legend: { display: false }, tooltip: { titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' } } },
-      scales: {
-        x: { ticks: { color: inkColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { family: 'Inter', size: 11 } }, grid: { color: gridColor } },
-        y: { ticks: { color: inkColor, font: { family: 'Inter', size: 11 } }, grid: { color: gridColor } }
-      }
-    };
-  }
- 
-  function renderChart(canvasId, legendId, key, chartKey) {
-    var ctx = document.getElementById(canvasId).getContext('2d');
-    var built = buildDatasets(key);
-    if (charts[chartKey]) charts[chartKey].destroy();
-    charts[chartKey] = new Chart(ctx, { type: 'line', data: { labels: built.labels, datasets: built.datasets }, options: chartOptions() });
- 
-    var legend = document.getElementById(legendId);
-    legend.innerHTML = '';
-    built.datasets.forEach(function (ds) {
-      var item = document.createElement('div');
-      item.className = 'legend-item';
-      var dot = document.createElement('span');
-      dot.className = 'legend-dot';
-      dot.style.background = ds.borderColor;
-      item.appendChild(dot);
-      var txt = document.createElement('span');
-      txt.textContent = ds.label;
-      item.appendChild(txt);
-      legend.appendChild(item);
-    });
-  }
- 
-  function renderCharts() {
-    renderChart('chartTemp', 'legendTemp', 'temp', 'temp');
-    renderChart('chartHum', 'legendHum', 'hum', 'hum');
-    renderChart('chartWeight', 'legendWeight', 'weight', 'weight');
-  }
- 
   function renderStatus() {
     var el = document.getElementById('statusLine');
     if (state.lastRefresh) {
@@ -832,7 +626,6 @@
  
   function renderAll() {
     renderHiveGrid();
-    renderCharts();
     renderStatus();
   }
  
@@ -935,43 +728,6 @@
   document.getElementById('scrim').onclick = closeDrawer;
   document.getElementById('settingsBtn').onclick = openDrawer;
  
-  // ---------- range toggle ----------
-  function toLocalInputValue(d) {
-    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-  }
-  document.getElementById('rangeToggle').addEventListener('click', function (e) {
-    var btn = e.target.closest('button[data-range]');
-    if (!btn) return;
-    state.range = btn.getAttribute('data-range');
-    Array.prototype.forEach.call(document.querySelectorAll('#rangeToggle button'), function (b) {
-      b.classList.toggle('active', b === btn);
-    });
-    var customBox = document.getElementById('customRange');
-    if (state.range === 'custom') {
-      customBox.classList.add('show');
-      if (!state.customFrom || !state.customTo) {
-        var bounds = getDataBounds();
-        if (bounds.min && bounds.max) {
-          state.customFrom = bounds.min;
-          state.customTo = bounds.max;
-          document.getElementById('customFrom').value = toLocalInputValue(bounds.min);
-          document.getElementById('customTo').value = toLocalInputValue(bounds.max);
-        }
-      }
-    } else {
-      customBox.classList.remove('show');
-    }
-    renderCharts();
-  });
-  document.getElementById('customFrom').addEventListener('change', function (e) {
-    var d = e.target.value ? new Date(e.target.value) : null;
-    if (d && !isNaN(d.getTime())) { state.customFrom = d; renderCharts(); }
-  });
-  document.getElementById('customTo').addEventListener('change', function (e) {
-    var d = e.target.value ? new Date(e.target.value) : null;
-    if (d && !isNaN(d.getTime())) { state.customTo = d; renderCharts(); }
-  });
- 
   // ---------- theme toggle ----------
   applyTheme(loadTheme());
   document.getElementById('themeBtn').onclick = function () {
@@ -981,7 +737,6 @@
     try {
       if (next) localStorage.setItem(THEME_KEY, next); else localStorage.removeItem(THEME_KEY);
     } catch (e) {}
-    renderCharts();
   };
  
   // ---------- refresh controls ----------
