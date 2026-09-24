@@ -210,7 +210,13 @@
   .hive-tabs button.active { background: var(--caramel); color: #fff; border-color: transparent; }
  
   .history-card { margin-top: 16px; padding: 18px 18px 14px; }
-  .history-granularity { margin-bottom: 14px; }
+  .history-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .history-granularity { margin-bottom: 0; }
+  .history-date-picker { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-soft); }
+  .history-date-picker input[type=date] {
+    border: 1px solid var(--glass-border); border-radius: 10px; background: var(--surface-2);
+    color: var(--ink); font-family: inherit; font-size: 12.5px; padding: 6px 8px;
+  }
   .history-table-wrap { max-height: 380px; overflow-y: auto; border-radius: 14px; border: 1px solid var(--glass-border); }
   .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .history-table thead th {
@@ -366,17 +372,21 @@
     <div class="hive-tabs" id="historyTabs"></div>
   </div>
   <div class="history-card glass" id="historyCard">
-    <div class="hive-tabs history-granularity" id="historyGranularity">
-      <button data-g="hour" class="active" type="button">รายชั่วโมง</button>
-      <button data-g="day" type="button">รายวัน</button>
-      <button data-g="week" type="button">รายสัปดาห์</button>
-      <button data-g="month" type="button">รายเดือน</button>
+    <div class="history-toolbar">
+      <div class="hive-tabs history-granularity" id="historyGranularity">
+        <button data-g="day" class="active" type="button">รายวัน</button>
+        <button data-g="week" type="button">รายสัปดาห์ (7 วันล่าสุด)</button>
+        <button data-g="month" type="button">รายเดือน (30 วันล่าสุด)</button>
+      </div>
+      <label class="history-date-picker" id="historyDatePickerWrap">
+        เลือกวันที่ <input type="date" id="historyDate">
+      </label>
     </div>
     <div class="history-table-wrap">
       <table class="history-table">
         <thead>
           <tr>
-            <th id="historyColLabel">วันที่ / เวลา</th>
+            <th id="historyColLabel">เวลา</th>
             <th>อุณหภูมิ (°C)</th><th>ความชื้น (%)</th><th>น้ำหนัก (ก.)</th>
           </tr>
         </thead>
@@ -385,7 +395,6 @@
     </div>
     <div class="history-footer">
       <span class="caption" id="historyCount"></span>
-      <button class="testbtn" id="historyLoadMore" type="button">โหลดเพิ่มเติม</button>
     </div>
   </div>
  
@@ -427,10 +436,9 @@
     data: {},       // id -> { rows, error, fetchedAt }
     lastRefresh: null,
     historyHiveId: null,
-    historyLimit: 100,
-    historyGranularity: 'hour'
+    historyGranularity: 'day',
+    historyDate: null   // 'YYYY-MM-DD' string, used only for 'day' granularity
   };
-  var HISTORY_PAGE = 100;
  
   // ---------- persistence ----------
   function loadHives() {
@@ -697,7 +705,7 @@
     var stillValid = withUrl.some(function (h) { return h.id === state.historyHiveId; });
     if (!stillValid) {
       state.historyHiveId = withUrl.length ? withUrl[0].id : null;
-      state.historyLimit = HISTORY_PAGE;
+      state.historyDate = null;
     }
   }
   function renderHistoryTabs() {
@@ -711,7 +719,7 @@
       btn.className = h.id === state.historyHiveId ? 'active' : '';
       btn.onclick = function () {
         state.historyHiveId = h.id;
-        state.historyLimit = HISTORY_PAGE;
+        state.historyDate = null;
         renderHistoryTabs();
         renderHistoryTable();
       };
@@ -719,73 +727,68 @@
     });
   }
  
-  var MONTH_NAMES_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-  function bucketStart(date, granularity) {
-    if (granularity === 'day') return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    if (granularity === 'week') {
-      var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      var dow = (d.getDay() + 6) % 7; // Monday = 0
-      d.setDate(d.getDate() - dow);
-      return d;
-    }
-    if (granularity === 'month') return new Date(date.getFullYear(), date.getMonth(), 1);
-    return date;
-  }
-  function bucketLabel(start, granularity) {
-    if (granularity === 'day') return fmtDay(start) + '/' + start.getFullYear();
-    if (granularity === 'week') {
-      var end = new Date(start);
-      end.setDate(end.getDate() + 6);
-      return fmtDay(start) + ' – ' + fmtDay(end) + '/' + end.getFullYear();
-    }
-    if (granularity === 'month') return MONTH_NAMES_TH[start.getMonth()] + ' ' + start.getFullYear();
-    return fmtDay(start) + ' ' + fmtTime(start);
+  function dateKeyStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parseDateKey(str) {
+    var p = str.split('-');
+    return new Date(+p[0], +p[1] - 1, +p[2]);
   }
   function avgOf(sum, count) { return count ? sum / count : NaN; }
-  function aggregateRows(rows, granularity) {
-    if (granularity === 'hour') return rows; // already newest-first raw rows
-    var map = {};
-    var order = [];
+  function aggregateByDay(rows) {
+    var map = {}, order = [];
     rows.forEach(function (r) {
-      var b = bucketStart(r.date, granularity);
-      var k = b.getTime();
-      if (!map[k]) {
-        map[k] = { start: b, tempSum: 0, tempCount: 0, humSum: 0, humCount: 0, weightSum: 0, weightCount: 0, readings: 0 };
-        order.push(k);
+      var key = dateKeyStr(r.date);
+      if (!map[key]) {
+        map[key] = { dateObj: new Date(r.date.getFullYear(), r.date.getMonth(), r.date.getDate()), tempSum: 0, tempCount: 0, humSum: 0, humCount: 0, weightSum: 0, weightCount: 0, readings: 0 };
+        order.push(key);
       }
-      var g = map[k];
+      var g = map[key];
       g.readings++;
       if (!isNaN(r.temp)) { g.tempSum += r.temp; g.tempCount++; }
       if (!isNaN(r.hum)) { g.humSum += r.hum; g.humCount++; }
       if (!isNaN(r.weight)) { g.weightSum += r.weight; g.weightCount++; }
     });
-    var groups = order.map(function (k) {
-      var g = map[k];
-      return {
-        date: g.start,
-        temp: avgOf(g.tempSum, g.tempCount),
-        hum: avgOf(g.humSum, g.humCount),
-        weight: avgOf(g.weightSum, g.weightCount),
-        readings: g.readings
-      };
+    var groups = order.map(function (key) {
+      var g = map[key];
+      return { date: g.dateObj, temp: avgOf(g.tempSum, g.tempCount), hum: avgOf(g.humSum, g.humCount), weight: avgOf(g.weightSum, g.weightCount), readings: g.readings };
     });
     groups.sort(function (a, b) { return b.date - a.date; }); // newest first
     return groups;
+  }
+  function getHiveDateBounds(hiveId) {
+    var res = state.data[hiveId];
+    if (!res || !res.rows || !res.rows.length) return null;
+    return { min: res.rows[0].date, max: res.rows[res.rows.length - 1].date };
+  }
+  function syncHistoryDatePicker() {
+    var input = document.getElementById('historyDate');
+    var bounds = state.historyHiveId ? getHiveDateBounds(state.historyHiveId) : null;
+    if (!bounds) { input.value = ''; input.removeAttribute('min'); input.removeAttribute('max'); return; }
+    var minStr = dateKeyStr(bounds.min), maxStr = dateKeyStr(bounds.max);
+    input.min = minStr; input.max = maxStr;
+    if (!state.historyDate || state.historyDate < minStr || state.historyDate > maxStr) {
+      state.historyDate = maxStr;
+    }
+    input.value = state.historyDate;
+  }
+  function appendCell(tr, text) {
+    var td = document.createElement('td');
+    td.textContent = text;
+    tr.appendChild(td);
   }
  
   function renderHistoryTable() {
     var tbody = document.getElementById('historyTbody');
     var countEl = document.getElementById('historyCount');
-    var loadMoreBtn = document.getElementById('historyLoadMore');
     var card = document.getElementById('historyCard');
     var colLabel = document.getElementById('historyColLabel');
+    var datePickerWrap = document.getElementById('historyDatePickerWrap');
     var g = state.historyGranularity;
     tbody.innerHTML = '';
-    colLabel.textContent = g === 'hour' ? 'วันที่ / เวลา' : g === 'day' ? 'วันที่' : g === 'week' ? 'สัปดาห์' : 'เดือน';
+    colLabel.textContent = g === 'day' ? 'เวลา' : 'วันที่';
  
     if (!state.historyHiveId) {
       card.querySelector('.history-table-wrap').style.display = 'none';
-      loadMoreBtn.style.display = 'none';
+      datePickerWrap.style.display = 'none';
       countEl.textContent = '';
       if (!card.querySelector('.history-empty')) {
         var empty = document.createElement('div');
@@ -798,44 +801,57 @@
     var existingEmpty = card.querySelector('.history-empty');
     if (existingEmpty) existingEmpty.remove();
     card.querySelector('.history-table-wrap').style.display = '';
+    datePickerWrap.style.display = g === 'day' ? '' : 'none';
+    syncHistoryDatePicker();
  
     var res = state.data[state.historyHiveId];
-    var rawRows = (res && res.rows) ? res.rows.slice().reverse() : []; // newest first
-    var rows = aggregateRows(rawRows, g);
-    var shown = rows.slice(0, state.historyLimit);
- 
-    shown.forEach(function (r) {
-      var tr = document.createElement('tr');
-      var tdDate = document.createElement('td');
-      tdDate.textContent = bucketLabel(r.date, g);
-      if (g !== 'hour' && r.readings) tdDate.textContent += ' (' + r.readings + ' ครั้ง)';
-      var tdTemp = document.createElement('td');
-      tdTemp.textContent = isNaN(r.temp) ? '—' : round1(r.temp);
-      var tdHum = document.createElement('td');
-      tdHum.textContent = isNaN(r.hum) ? '—' : round1(r.hum);
-      var tdWeight = document.createElement('td');
-      tdWeight.textContent = isNaN(r.weight) ? '—' : round1(r.weight);
-      tr.appendChild(tdDate); tr.appendChild(tdTemp); tr.appendChild(tdHum); tr.appendChild(tdWeight);
-      tbody.appendChild(tr);
-    });
+    var rawRows = (res && res.rows) ? res.rows : []; // ascending
  
     if (!rawRows.length) {
       countEl.textContent = res && res.error ? 'เชื่อมต่อไม่สำเร็จ: ' + res.error : 'ยังไม่มีข้อมูลจากเซนเซอร์ในชีตนี้';
-    } else {
-      var unitLabel = g === 'hour' ? 'แถว' : g === 'day' ? 'วัน' : g === 'week' ? 'สัปดาห์' : 'เดือน';
-      countEl.textContent = 'แสดง ' + shown.length + ' จากทั้งหมด ' + rows.length + ' ' + unitLabel;
+      return;
     }
-    loadMoreBtn.style.display = shown.length < rows.length ? '' : 'none';
+ 
+    if (g === 'day') {
+      var target = state.historyDate;
+      var dayRows = rawRows.filter(function (r) { return dateKeyStr(r.date) === target; }).slice().reverse(); // newest first
+      dayRows.forEach(function (r) {
+        var tr = document.createElement('tr');
+        appendCell(tr, fmtTime(r.date));
+        appendCell(tr, isNaN(r.temp) ? '—' : round1(r.temp));
+        appendCell(tr, isNaN(r.hum) ? '—' : round1(r.hum));
+        appendCell(tr, isNaN(r.weight) ? '—' : round1(r.weight));
+        tbody.appendChild(tr);
+      });
+      countEl.textContent = dayRows.length
+        ? ('พบ ' + dayRows.length + ' ค่าอ่าน ในวันที่ ' + fmtDay(parseDateKey(target)) + '/' + target.split('-')[0])
+        : 'ไม่มีข้อมูลในวันที่เลือก';
+    } else {
+      var days = g === 'week' ? 7 : 30;
+      var cutoff = Date.now() - days * 24 * 3600 * 1000;
+      var windowRows = rawRows.filter(function (r) { return r.date.getTime() >= cutoff; });
+      var groups = aggregateByDay(windowRows);
+      groups.forEach(function (grp) {
+        var tr = document.createElement('tr');
+        appendCell(tr, fmtDay(grp.date) + '/' + grp.date.getFullYear() + ' (' + grp.readings + ' ครั้ง)');
+        appendCell(tr, isNaN(grp.temp) ? '—' : round1(grp.temp));
+        appendCell(tr, isNaN(grp.hum) ? '—' : round1(grp.hum));
+        appendCell(tr, isNaN(grp.weight) ? '—' : round1(grp.weight));
+        tbody.appendChild(tr);
+      });
+      var windowLabel = g === 'week' ? '7 วันล่าสุด' : '30 วันล่าสุด';
+      countEl.textContent = groups.length
+        ? ('ค่าเฉลี่ยรายวัน ' + groups.length + ' วัน จากช่วง ' + windowLabel)
+        : ('ไม่มีข้อมูลในช่วง ' + windowLabel);
+    }
   }
-  document.getElementById('historyLoadMore').onclick = function () {
-    state.historyLimit += HISTORY_PAGE;
-    renderHistoryTable();
-  };
+  document.getElementById('historyDate').addEventListener('change', function (e) {
+    if (e.target.value) { state.historyDate = e.target.value; renderHistoryTable(); }
+  });
   document.getElementById('historyGranularity').addEventListener('click', function (e) {
     var btn = e.target.closest('button[data-g]');
     if (!btn) return;
     state.historyGranularity = btn.getAttribute('data-g');
-    state.historyLimit = HISTORY_PAGE;
     Array.prototype.forEach.call(document.querySelectorAll('#historyGranularity button'), function (b) {
       b.classList.toggle('active', b === btn);
     });
