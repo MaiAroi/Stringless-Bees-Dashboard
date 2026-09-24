@@ -732,28 +732,6 @@
     var p = str.split('-');
     return new Date(+p[0], +p[1] - 1, +p[2]);
   }
-  function avgOf(sum, count) { return count ? sum / count : NaN; }
-  function aggregateByDay(rows) {
-    var map = {}, order = [];
-    rows.forEach(function (r) {
-      var key = dateKeyStr(r.date);
-      if (!map[key]) {
-        map[key] = { dateObj: new Date(r.date.getFullYear(), r.date.getMonth(), r.date.getDate()), tempSum: 0, tempCount: 0, humSum: 0, humCount: 0, weightSum: 0, weightCount: 0, readings: 0 };
-        order.push(key);
-      }
-      var g = map[key];
-      g.readings++;
-      if (!isNaN(r.temp)) { g.tempSum += r.temp; g.tempCount++; }
-      if (!isNaN(r.hum)) { g.humSum += r.hum; g.humCount++; }
-      if (!isNaN(r.weight)) { g.weightSum += r.weight; g.weightCount++; }
-    });
-    var groups = order.map(function (key) {
-      var g = map[key];
-      return { date: g.dateObj, temp: avgOf(g.tempSum, g.tempCount), hum: avgOf(g.humSum, g.humCount), weight: avgOf(g.weightSum, g.weightCount), readings: g.readings };
-    });
-    groups.sort(function (a, b) { return b.date - a.date; }); // newest first
-    return groups;
-  }
   function getHiveDateBounds(hiveId) {
     var res = state.data[hiveId];
     if (!res || !res.rows || !res.rows.length) return null;
@@ -784,7 +762,7 @@
     var datePickerWrap = document.getElementById('historyDatePickerWrap');
     var g = state.historyGranularity;
     tbody.innerHTML = '';
-    colLabel.textContent = g === 'day' ? 'เวลา' : 'วันที่';
+    colLabel.textContent = g === 'day' ? 'เวลา' : 'วันที่ / เวลา';
  
     if (!state.historyHiveId) {
       card.querySelector('.history-table-wrap').style.display = 'none';
@@ -829,19 +807,18 @@
     } else {
       var days = g === 'week' ? 7 : 30;
       var cutoff = Date.now() - days * 24 * 3600 * 1000;
-      var windowRows = rawRows.filter(function (r) { return r.date.getTime() >= cutoff; });
-      var groups = aggregateByDay(windowRows);
-      groups.forEach(function (grp) {
+      var windowRows = rawRows.filter(function (r) { return r.date.getTime() >= cutoff; }).slice().reverse(); // newest first
+      windowRows.forEach(function (r) {
         var tr = document.createElement('tr');
-        appendCell(tr, fmtDay(grp.date) + '/' + grp.date.getFullYear() + ' (' + grp.readings + ' ครั้ง)');
-        appendCell(tr, isNaN(grp.temp) ? '—' : round1(grp.temp));
-        appendCell(tr, isNaN(grp.hum) ? '—' : round1(grp.hum));
-        appendCell(tr, isNaN(grp.weight) ? '—' : round1(grp.weight));
+        appendCell(tr, fmtDay(r.date) + ' ' + fmtTime(r.date));
+        appendCell(tr, isNaN(r.temp) ? '—' : round1(r.temp));
+        appendCell(tr, isNaN(r.hum) ? '—' : round1(r.hum));
+        appendCell(tr, isNaN(r.weight) ? '—' : round1(r.weight));
         tbody.appendChild(tr);
       });
       var windowLabel = g === 'week' ? '7 วันล่าสุด' : '30 วันล่าสุด';
-      countEl.textContent = groups.length
-        ? ('ค่าเฉลี่ยรายวัน ' + groups.length + ' วัน จากช่วง ' + windowLabel)
+      countEl.textContent = windowRows.length
+        ? ('มีข้อมูลทั้งหมด ' + windowRows.length + ' ค่า ในช่วง ' + windowLabel)
         : ('ไม่มีข้อมูลในช่วง ' + windowLabel);
     }
   }
