@@ -210,15 +210,17 @@
     border-radius: 999px; cursor: pointer; font-family: 'Inter', sans-serif;
   }
   .hive-tabs button.active { background: var(--caramel); color: #fff; border-color: transparent; }
- 
+
   .chart-toolbar { padding: 18px 18px 4px; }
-  .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 16px; }
-  .chart-block { padding: 18px 18px 12px; }
-  .chart-block h3 { margin: 0 0 2px; font-size: 15px; font-weight: 600; }
-  .chart-block .caption { margin: 0 0 12px; color: var(--ink-soft); font-size: 12.5px; }
-  .chart-block canvas { max-height: 200px; }
-  .chart-empty { font-size: 13px; color: var(--ink-soft); padding: 30px 4px; text-align: center; }
- 
+  .chart-block { padding: 20px 20px 16px; margin-top: 16px; }
+  .chart-block h3 { margin: 0 0 2px; font-size: 16px; font-weight: 600; }
+  .chart-block .caption { margin: 0 0 4px; color: var(--ink-soft); font-size: 12.5px; }
+  .chart-block canvas { max-height: 320px; }
+  .chart-empty { font-size: 13px; color: var(--ink-soft); padding: 40px 4px; text-align: center; }
+  .legend-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 8px 0 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-soft); font-weight: 600; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
   .history-table th.col-seq, .history-table td.col-seq { color: var(--ink-soft); font-weight: 400; width: 1%; }
  
   .history-card { margin-top: 16px; padding: 18px 18px 14px; }
@@ -399,25 +401,12 @@
       </label>
     </div>
   </div>
-  <div class="chart-grid">
-    <div class="chart-block glass">
-      <h3>อุณหภูมิ</h3>
-      <p class="caption">ควบคุมอุณหภูมิภายในรัง</p>
-      <canvas id="chartTemp"></canvas>
-      <div class="chart-empty" id="chartTempEmpty" style="display:none;">ไม่มีข้อมูลในช่วงที่เลือก</div>
-    </div>
-    <div class="chart-block glass">
-      <h3>ความชื้น</h3>
-      <p class="caption">ความชื้นสัมพัทธ์ในรัง</p>
-      <canvas id="chartHum"></canvas>
-      <div class="chart-empty" id="chartHumEmpty" style="display:none;">ไม่มีข้อมูลในช่วงที่เลือก</div>
-    </div>
-    <div class="chart-block glass">
-      <h3>น้ำหนัก</h3>
-      <p class="caption">น้ำหนักรวมของรัง</p>
-      <canvas id="chartWeight"></canvas>
-      <div class="chart-empty" id="chartWeightEmpty" style="display:none;">ไม่มีข้อมูลในช่วงที่เลือก</div>
-    </div>
+  <div class="chart-block glass">
+    <h3>อุณหภูมิ · ความชื้น · น้ำหนัก</h3>
+    <p class="caption">3 แกนซ้อนกันในกราฟเดียว — เลื่อนเมาส์ชี้เส้นเพื่อดูค่าจริงของแต่ละจุด</p>
+    <div class="legend-row" id="chartLegend"></div>
+    <canvas id="chartCombined"></canvas>
+    <div class="chart-empty" id="chartCombinedEmpty" style="display:none;">ไม่มีข้อมูลในช่วงที่เลือก</div>
   </div>
  
   <div class="section-head">
@@ -584,7 +573,7 @@
     out.sort(function (a, b) { return a.date - b.date; });
     return out;
   }
- 
+
   // ---------- CSV parsing (handles quoted fields, comma or semicolon separators) ----------
   function parseCSVText(text) {
     var lines = text.replace(/^\uFEFF/, '').replace(/\r/g, '').split('\n').filter(function (l) { return l.trim().length; });
@@ -610,7 +599,7 @@
       return cells.map(function (c) { return c.trim(); });
     });
   }
- 
+
   // ---------- file reading helpers ----------
   function readFileAsText(file) {
     return new Promise(function (resolve, reject) {
@@ -628,7 +617,7 @@
       r.readAsArrayBuffer(file);
     });
   }
- 
+
   // ---------- import a .csv / .xlsx / .xls file into hive rows ----------
   function parseImportedFile(file) {
     var name = file.name || '';
@@ -894,7 +883,7 @@
     td.textContent = text;
     tr.appendChild(td);
   }
- 
+
   // rows for the currently selected hive + granularity/date, ascending by time.
   // shared by both the history table and the charts so they always agree.
   function getFilteredRowsAsc() {
@@ -911,7 +900,7 @@
     var cutoff = Date.now() - days * 24 * 3600 * 1000;
     return rawRows.filter(function (r) { return r.date.getTime() >= cutoff; });
   }
- 
+
   function renderHistoryTable() {
     var tbody = document.getElementById('historyTbody');
     var countEl = document.getElementById('historyCount');
@@ -972,50 +961,96 @@
         : ('ไม่มีข้อมูลในช่วง ' + windowLabel);
     }
   }
- 
-  // ---------- render: charts (mirror the same filtered rows as the history table) ----------
-  var chartInstances = {};
+
+  // ---------- render: combined multi-axis chart (mirrors the same filtered rows as the history table) ----------
+  var combinedChart = null;
   function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
-  function drawOneChart(canvasId, emptyId, key, rows, labels, color) {
-    var canvas = document.getElementById(canvasId);
-    var emptyEl = document.getElementById(emptyId);
-    if (chartInstances[canvasId]) { chartInstances[canvasId].destroy(); chartInstances[canvasId] = null; }
-    if (!rows.length) {
-      canvas.style.display = 'none';
-      emptyEl.style.display = 'block';
-      return;
-    }
-    canvas.style.display = 'block';
-    emptyEl.style.display = 'none';
-    var data = rows.map(function (r) { var v = r[key]; return isNaN(v) ? null : v; });
-    var ink = cssVar('--ink-soft');
-    var grid = cssVar('--glass-border');
-    chartInstances[canvasId] = new Chart(canvas.getContext('2d'), {
-      type: 'line',
-      data: { labels: labels, datasets: [{ data: data, borderColor: color, backgroundColor: color, spanGaps: true, tension: 0.3, pointRadius: labels.length > 50 ? 0 : 2, borderWidth: 2 }] },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'nearest', axis: 'x', intersect: false },
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { ticks: { color: ink, maxRotation: 0, autoSkip: true, maxTicksLimit: 6, font: { family: 'Inter', size: 10.5 } }, grid: { color: grid } },
-          y: { ticks: { color: ink, font: { family: 'Inter', size: 10.5 } }, grid: { color: grid } }
-        }
-      }
+  function renderChartLegend(metrics) {
+    var wrap = document.getElementById('chartLegend');
+    wrap.innerHTML = '';
+    metrics.forEach(function (m) {
+      var item = document.createElement('div');
+      item.className = 'legend-item';
+      var dot = document.createElement('span');
+      dot.className = 'legend-dot';
+      dot.style.background = m.color;
+      item.appendChild(dot);
+      var txt = document.createElement('span');
+      txt.textContent = m.label;
+      item.appendChild(txt);
+      wrap.appendChild(item);
     });
   }
   function renderCharts() {
     var rows = getFilteredRowsAsc();
     var g = state.historyGranularity;
     var labels = rows.map(function (r) { return g === 'day' ? fmtTime(r.date) : (fmtDay(r.date) + ' ' + fmtTime(r.date)); });
-    var hive = state.hives.find(function (h) { return h.id === state.historyHiveId; });
-    var color = hive ? hive.color : '#C7861E';
-    if (typeof Chart === 'undefined') return;
-    drawOneChart('chartTemp', 'chartTempEmpty', 'temp', rows, labels, color);
-    drawOneChart('chartHum', 'chartHumEmpty', 'hum', rows, labels, color);
-    drawOneChart('chartWeight', 'chartWeightEmpty', 'weight', rows, labels, color);
+    var canvas = document.getElementById('chartCombined');
+    var emptyEl = document.getElementById('chartCombinedEmpty');
+
+    var tempColor = cssVar('--amber');
+    var humColor = cssVar('--teal');
+    var weightColor = cssVar('--clay');
+    renderChartLegend([
+      { label: 'อุณหภูมิ (°C)', color: tempColor },
+      { label: 'ความชื้น (%)', color: humColor },
+      { label: 'น้ำหนัก (ก.)', color: weightColor }
+    ]);
+
+    if (combinedChart) { combinedChart.destroy(); combinedChart = null; }
+    if (!rows.length || typeof Chart === 'undefined') {
+      canvas.style.display = 'none';
+      emptyEl.style.display = 'block';
+      return;
+    }
+    canvas.style.display = 'block';
+    emptyEl.style.display = 'none';
+
+    var ink = cssVar('--ink-soft');
+    var grid = cssVar('--glass-border');
+    var pointRadius = labels.length > 50 ? 0 : 2;
+
+    combinedChart = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'อุณหภูมิ (°C)', data: rows.map(function (r) { return isNaN(r.temp) ? null : r.temp; }), borderColor: tempColor, backgroundColor: tempColor, spanGaps: true, tension: 0.3, pointRadius: pointRadius, borderWidth: 2, yAxisID: 'yTemp' },
+          { label: 'ความชื้น (%)', data: rows.map(function (r) { return isNaN(r.hum) ? null : r.hum; }), borderColor: humColor, backgroundColor: humColor, spanGaps: true, tension: 0.3, pointRadius: pointRadius, borderWidth: 2, yAxisID: 'yHum' },
+          { label: 'น้ำหนัก (ก.)', data: rows.map(function (r) { return isNaN(r.weight) ? null : r.weight; }), borderColor: weightColor, backgroundColor: weightColor, spanGaps: true, tension: 0.3, pointRadius: pointRadius, borderWidth: 2, yAxisID: 'yWeight' }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: ink, maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { family: 'Inter', size: 11 } }, grid: { color: grid } },
+          yTemp: {
+            position: 'left',
+            ticks: { color: tempColor, font: { family: 'Inter', size: 10.5 } },
+            grid: { color: grid },
+            title: { display: true, text: '°C', color: tempColor, font: { family: 'Inter', size: 11, weight: '600' } }
+          },
+          yHum: {
+            position: 'right',
+            min: 0, max: 100,
+            ticks: { color: humColor, font: { family: 'Inter', size: 10.5 } },
+            grid: { drawOnChartArea: false },
+            title: { display: true, text: '%', color: humColor, font: { family: 'Inter', size: 11, weight: '600' } }
+          },
+          yWeight: {
+            position: 'right',
+            offset: true,
+            ticks: { color: weightColor, font: { family: 'Inter', size: 10.5 } },
+            grid: { drawOnChartArea: false },
+            title: { display: true, text: 'ก.', color: weightColor, font: { family: 'Inter', size: 11, weight: '600' } }
+          }
+        }
+      }
+    });
   }
- 
+
   document.getElementById('historyDate').addEventListener('change', function (e) {
     if (e.target.value) { state.historyDate = e.target.value; renderHistoryTable(); renderCharts(); }
   });
@@ -1081,7 +1116,7 @@
       nameInput.value = hive.name;
       nameInput.oninput = function () { hive.name = nameInput.value; };
       form.appendChild(nameInput);
- 
+
       // source type toggle
       var srcLabel = document.createElement('label');
       srcLabel.textContent = 'แหล่งข้อมูล';
