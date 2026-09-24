@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
     box-sizing: border-box;
@@ -268,13 +269,17 @@
     background: var(--surface-2); color: var(--ink); font-family: inherit; font-size: 13.5px;
   }
   .hive-form input[type=text]:focus { outline: 2px solid var(--amber); outline-offset: 1px; }
+  .hive-form input[type=file] {
+    width: 100%; font-size: 12.5px; color: var(--ink-soft); font-family: inherit;
+  }
   .hive-form-top { display: flex; align-items: center; justify-content: space-between; }
   .swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; margin-right: 8px; vertical-align: -1px; }
   .removebtn {
     border: none; background: none; color: var(--warn); font-size: 12px; cursor: pointer;
     text-decoration: underline; padding: 0;
   }
-  .test-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .source-toggle { margin: 4px 0 12px; }
+  .test-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
   .testbtn {
     border: 1px solid var(--glass-border); background: var(--surface-2); color: var(--ink);
     font-size: 12.5px; padding: 6px 14px; border-radius: 999px; cursor: pointer; font-family: inherit;
@@ -399,15 +404,15 @@
   </div>
  
   <footer class="glass">
-    ดึงข้อมูลตรงจาก Google ชีตของแต่ละรัง (ต้องแชร์แบบ "ทุกคนที่มีลิงก์ดูได้") รีเฟรชอัตโนมัติทุก 5 นาที การตั้งค่าลิงก์ถูกบันทึกไว้ในเบราว์เซอร์นี้เท่านั้น
+    ดึงข้อมูลจากลิงก์ Google ชีต (ต้องแชร์แบบ "ทุกคนที่มีลิงก์ดูได้") หรือนำเข้าจากไฟล์ CSV/Excel ของแต่ละรัง รีเฟรชอัตโนมัติทุก 5 นาทีสำหรับรังที่ใช้ลิงก์ การตั้งค่าถูกบันทึกไว้ในเบราว์เซอร์นี้เท่านั้น
   </footer>
 </div>
  
 <div class="scrim" id="scrim"></div>
 <aside class="drawer glass" id="drawer" aria-label="ตั้งค่าลิงก์รัง">
   <div class="drawer-inner">
-    <h2>ตั้งค่าลิงก์รัง</h2>
-    <p class="caption">เพิ่มลิงก์ Google ชีตของแต่ละรังได้ไม่จำกัดจำนวน แต่ละชีตต้องมีคอลัมน์เรียงกันเป็น วันที่/เวลา, อุณหภูมิ, ความชื้น, น้ำหนัก และต้องแชร์เป็น "ทุกคนที่มีลิงก์ดูได้"</p>
+    <h2>ตั้งค่าแหล่งข้อมูลรัง</h2>
+    <p class="caption">เพิ่มแหล่งข้อมูลของแต่ละรังได้ไม่จำกัดจำนวน เลือกได้ทั้งลิงก์ Google ชีต (อัปเดตสดอัตโนมัติ) หรืออัปโหลดไฟล์ CSV/Excel (นำเข้าแบบครั้งเดียว อัปโหลดไฟล์ใหม่ทับได้เมื่อมีข้อมูลเพิ่ม) คอลัมน์ต้องเรียงเป็น วันที่/เวลา, อุณหภูมิ, ความชื้น, น้ำหนัก</p>
     <div id="hiveFormList"></div>
     <button class="addbtn" id="addHiveBtn">+ เพิ่มรังใหม่</button>
     <div class="drawer-actions">
@@ -421,14 +426,14 @@
 (function () {
   "use strict";
  
-  var STORAGE_KEY = 'chanrong-hives-v1';
+  var STORAGE_KEY = 'chanrong-hives-v2';
   var THEME_KEY = 'chanrong-theme';
   var PALETTE = ['#C7861E', '#52713C', '#3A7472', '#A44F31', '#7A5FA8', '#3B6E9C'];
  
   var DEFAULT_HIVES = [
-    { id: 'h1', name: 'รังที่ 1', url: 'https://docs.google.com/spreadsheets/d/1Z3stbTTjkv_cIfGvNMidheTTAc7tMGKxvTJidm54HEM/edit?usp=sharing', color: PALETTE[0] },
-    { id: 'h2', name: 'รังที่ 2', url: '', color: PALETTE[1] },
-    { id: 'h3', name: 'รังที่ 3', url: '', color: PALETTE[2] }
+    { id: 'h1', name: 'รังที่ 1', sourceType: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1Z3stbTTjkv_cIfGvNMidheTTAc7tMGKxvTJidm54HEM/edit?usp=sharing', color: PALETTE[0] },
+    { id: 'h2', name: 'รังที่ 2', sourceType: 'sheet', url: '', color: PALETTE[1] },
+    { id: 'h3', name: 'รังที่ 3', sourceType: 'sheet', url: '', color: PALETTE[2] }
   ];
  
   var state = {
@@ -448,6 +453,13 @@
         var parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length) return parsed;
       }
+      var oldRaw = localStorage.getItem('chanrong-hives-v1');
+      if (oldRaw) {
+        var oldParsed = JSON.parse(oldRaw);
+        if (Array.isArray(oldParsed) && oldParsed.length) {
+          return oldParsed.map(function (h) { return Object.assign({ sourceType: 'sheet' }, h); });
+        }
+      }
     } catch (e) {}
     return DEFAULT_HIVES.map(function (h) { return Object.assign({}, h); });
   }
@@ -464,8 +476,12 @@
       document.documentElement.removeAttribute('data-theme');
     }
   }
+  function hiveHasSource(hive) {
+    if (hive.sourceType === 'file') return !!(hive.fileRows && hive.fileRows.length);
+    return !!hive.url;
+  }
  
-  // ---------- google sheet parsing ----------
+  // ---------- shared cell parsing (google sheet gviz, csv, excel all funnel through this) ----------
   function extractSheetId(url) {
     var m = (url || '').match(/\/d\/([a-zA-Z0-9-_]+)/);
     return m ? m[1] : null;
@@ -495,6 +511,7 @@
   function cellVal(cell) { return cell ? cell.v : null; }
   function parseDateCell(v) {
     if (v == null) return null;
+    if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
     if (typeof v === 'string') {
       var m1 = v.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)$/);
       if (m1) return new Date(+m1[1], +m1[2], +m1[3], +(m1[4] || 0), +(m1[5] || 0), +(m1[6] || 0));
@@ -508,11 +525,96 @@
   function toNumber(v) {
     if (v == null) return NaN;
     if (typeof v === 'number') return v;
+    if (v instanceof Date) return NaN;
     var n = parseFloat(String(v).replace(',', '.'));
     return n;
   }
+  function rowsFromRawTable(rawRows) {
+    var out = [];
+    (rawRows || []).forEach(function (r) {
+      r = r || [];
+      var date = parseDateCell(r[0]);
+      var temp = toNumber(r[1]);
+      var hum = toNumber(r[2]);
+      var weight = toNumber(r[3]);
+      if (!date || (isNaN(temp) && isNaN(hum) && isNaN(weight))) return;
+      out.push({ date: date, temp: temp, hum: hum, weight: weight });
+    });
+    out.sort(function (a, b) { return a.date - b.date; });
+    return out;
+  }
+ 
+  // ---------- CSV parsing (handles quoted fields, comma or semicolon separators) ----------
+  function parseCSVText(text) {
+    var lines = text.replace(/^\uFEFF/, '').replace(/\r/g, '').split('\n').filter(function (l) { return l.trim().length; });
+    return lines.map(function (line) {
+      var cells = [];
+      var cur = '';
+      var inQuotes = false;
+      for (var i = 0; i < line.length; i++) {
+        var ch = line[i];
+        if (inQuotes) {
+          if (ch === '"') {
+            if (line[i + 1] === '"') { cur += '"'; i++; } else { inQuotes = false; }
+          } else cur += ch;
+        } else if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ',' || ch === ';') {
+          cells.push(cur); cur = '';
+        } else {
+          cur += ch;
+        }
+      }
+      cells.push(cur);
+      return cells.map(function (c) { return c.trim(); });
+    });
+  }
+ 
+  // ---------- file reading helpers ----------
+  function readFileAsText(file) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () { resolve(r.result); };
+      r.onerror = function () { reject(new Error('อ่านไฟล์ไม่สำเร็จ')); };
+      r.readAsText(file, 'utf-8');
+    });
+  }
+  function readFileAsArrayBuffer(file) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () { resolve(r.result); };
+      r.onerror = function () { reject(new Error('อ่านไฟล์ไม่สำเร็จ')); };
+      r.readAsArrayBuffer(file);
+    });
+  }
+ 
+  // ---------- import a .csv / .xlsx / .xls file into hive rows ----------
+  function parseImportedFile(file) {
+    var name = file.name || '';
+    var ext = name.split('.').pop().toLowerCase();
+    if (ext === 'csv') {
+      return readFileAsText(file).then(function (text) {
+        return rowsFromRawTable(parseCSVText(text));
+      });
+    }
+    if (ext === 'xlsx' || ext === 'xls') {
+      if (typeof XLSX === 'undefined') return Promise.reject(new Error('ไลบรารีอ่านไฟล์ Excel โหลดไม่สำเร็จ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต'));
+      return readFileAsArrayBuffer(file).then(function (buffer) {
+        var wb = XLSX.read(buffer, { type: 'array', cellDates: true });
+        var ws = wb.Sheets[wb.SheetNames[0]];
+        var raw = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+        return rowsFromRawTable(raw);
+      });
+    }
+    return Promise.reject(new Error('รองรับเฉพาะไฟล์ .csv, .xlsx หรือ .xls'));
+  }
  
   function fetchHive(hive) {
+    if (hive.sourceType === 'file') {
+      if (!hive.fileRows || !hive.fileRows.length) return Promise.resolve({ rows: [], error: null, empty: true });
+      var rows = hive.fileRows.map(function (r) { return { date: new Date(r.date), temp: r.temp, hum: r.hum, weight: r.weight }; });
+      return Promise.resolve({ rows: rows, error: null });
+    }
     if (!hive.url) return Promise.resolve({ rows: [], error: null, empty: true });
     var gurl = buildGvizUrl(hive.url);
     if (!gurl) return Promise.resolve({ rows: [], error: 'ลิงก์ Google ชีตไม่ถูกต้อง' });
@@ -523,18 +625,11 @@
       })
       .then(function (text) {
         var table = parseGvizText(text);
-        var rows = [];
-        (table.rows || []).forEach(function (r) {
+        var rawRows = (table.rows || []).map(function (r) {
           var c = r.c || [];
-          var date = parseDateCell(cellVal(c[0]));
-          var temp = toNumber(cellVal(c[1]));
-          var hum = toNumber(cellVal(c[2]));
-          var weight = toNumber(cellVal(c[3]));
-          if (!date || isNaN(temp) && isNaN(hum) && isNaN(weight)) return;
-          rows.push({ date: date, temp: temp, hum: hum, weight: weight });
+          return [cellVal(c[0]), cellVal(c[1]), cellVal(c[2]), cellVal(c[3])];
         });
-        rows.sort(function (a, b) { return a.date - b.date; });
-        return { rows: rows, error: null };
+        return { rows: rowsFromRawTable(rawRows), error: null };
       })
       .catch(function (err) {
         return { rows: [], error: err.message || 'โหลดข้อมูลไม่สำเร็จ — ตรวจสอบว่าแชร์ชีตแบบ "ทุกคนที่มีลิงก์ดูได้"' };
@@ -596,14 +691,14 @@
  
       var res = state.data[hive.id];
  
-      if (!hive.url) {
+      if (!hiveHasSource(hive)) {
         var meta = document.createElement('div');
         meta.className = 'hive-meta';
-        meta.textContent = 'ยังไม่ได้ตั้งค่าลิงก์';
+        meta.textContent = hive.sourceType === 'file' ? 'ยังไม่ได้นำเข้าไฟล์' : 'ยังไม่ได้ตั้งค่าลิงก์';
         panel.appendChild(meta);
         var empty = document.createElement('div');
         empty.className = 'hive-empty';
-        empty.innerHTML = 'เพิ่มลิงก์ Google ชีตของรังนี้ได้ที่ ';
+        empty.innerHTML = 'เพิ่มแหล่งข้อมูลของรังนี้ได้ที่ ';
         var link = document.createElement('button');
         link.className = 'linklike';
         link.textContent = 'ตั้งค่า';
@@ -639,11 +734,11 @@
       if (!res.rows.length) {
         var meta3 = document.createElement('div');
         meta3.className = 'hive-meta';
-        meta3.textContent = 'เชื่อมต่อสำเร็จ';
+        meta3.textContent = hive.sourceType === 'file' ? 'นำเข้าไฟล์แล้ว' : 'เชื่อมต่อสำเร็จ';
         panel.appendChild(meta3);
         var empty2 = document.createElement('div');
         empty2.className = 'hive-empty';
-        empty2.textContent = 'ยังไม่มีข้อมูลจากเซนเซอร์ในชีตนี้';
+        empty2.textContent = 'ยังไม่มีข้อมูลที่อ่านได้จากแหล่งนี้';
         panel.appendChild(empty2);
         grid.appendChild(panel);
         return;
@@ -651,11 +746,15 @@
  
       var last = res.rows[res.rows.length - 1];
       var prev = res.rows.length > 1 ? res.rows[res.rows.length - 2] : null;
-      var stale = (Date.now() - last.date.getTime()) > 2 * 3600 * 1000;
+      var stale = hive.sourceType !== 'file' && (Date.now() - last.date.getTime()) > 2 * 3600 * 1000;
  
       var meta = document.createElement('div');
       meta.className = 'hive-meta' + (stale ? ' stale' : '');
-      meta.textContent = (stale ? '⚠ ' : '') + 'อัปเดต ' + fmtDay(last.date) + ' ' + fmtTime(last.date) + (stale ? ' (ข้อมูลอาจค้าง)' : '');
+      if (hive.sourceType === 'file') {
+        meta.textContent = 'ไฟล์: ' + (hive.fileName || '') + ' — ข้อมูลล่าสุดในไฟล์ ' + fmtDay(last.date) + ' ' + fmtTime(last.date);
+      } else {
+        meta.textContent = (stale ? '⚠ ' : '') + 'อัปเดต ' + fmtDay(last.date) + ' ' + fmtTime(last.date) + (stale ? ' (ข้อมูลอาจค้าง)' : '');
+      }
       panel.appendChild(meta);
  
       panel.appendChild(readingRow('อุณหภูมิ', last.temp, prev ? prev.temp : null, '°C'));
@@ -701,18 +800,18 @@
  
   // ---------- render: history table ----------
   function ensureHistoryHive() {
-    var withUrl = state.hives.filter(function (h) { return h.url; });
-    var stillValid = withUrl.some(function (h) { return h.id === state.historyHiveId; });
+    var withSource = state.hives.filter(hiveHasSource);
+    var stillValid = withSource.some(function (h) { return h.id === state.historyHiveId; });
     if (!stillValid) {
-      state.historyHiveId = withUrl.length ? withUrl[0].id : null;
+      state.historyHiveId = withSource.length ? withSource[0].id : null;
       state.historyDate = null;
     }
   }
   function renderHistoryTabs() {
     var wrap = document.getElementById('historyTabs');
     wrap.innerHTML = '';
-    var withUrl = state.hives.filter(function (h) { return h.url; });
-    withUrl.forEach(function (h) {
+    var withSource = state.hives.filter(hiveHasSource);
+    withSource.forEach(function (h) {
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.textContent = h.name;
@@ -771,7 +870,7 @@
       if (!card.querySelector('.history-empty')) {
         var empty = document.createElement('div');
         empty.className = 'history-empty';
-        empty.textContent = 'ยังไม่มีรังที่ตั้งค่าลิงก์ Google ชีตไว้ — เพิ่มลิงก์ได้ที่ปุ่มตั้งค่าด้านบน';
+        empty.textContent = 'ยังไม่มีรังที่ตั้งค่าแหล่งข้อมูลไว้ — เพิ่มลิงก์หรือไฟล์ได้ที่ปุ่มตั้งค่าด้านบน';
         card.insertBefore(empty, card.querySelector('.history-footer'));
       }
       return;
@@ -786,7 +885,7 @@
     var rawRows = (res && res.rows) ? res.rows : []; // ascending
  
     if (!rawRows.length) {
-      countEl.textContent = res && res.error ? 'เชื่อมต่อไม่สำเร็จ: ' + res.error : 'ยังไม่มีข้อมูลจากเซนเซอร์ในชีตนี้';
+      countEl.textContent = res && res.error ? 'เชื่อมต่อไม่สำเร็จ: ' + res.error : 'ยังไม่มีข้อมูลจากแหล่งนี้';
       return;
     }
  
@@ -859,6 +958,7 @@
     var list = document.getElementById('hiveFormList');
     list.innerHTML = '';
     draftHives.forEach(function (hive, idx) {
+      if (!hive.sourceType) hive.sourceType = 'sheet';
       var form = document.createElement('div');
       form.className = 'hive-form';
  
@@ -885,43 +985,103 @@
       nameInput.oninput = function () { hive.name = nameInput.value; };
       form.appendChild(nameInput);
  
-      var urlLabel = document.createElement('label');
-      urlLabel.textContent = 'ลิงก์ Google ชีต';
-      form.appendChild(urlLabel);
-      var urlInput = document.createElement('input');
-      urlInput.type = 'text';
-      urlInput.placeholder = 'https://docs.google.com/spreadsheets/d/…';
-      urlInput.value = hive.url;
-      urlInput.oninput = function () { hive.url = urlInput.value.trim(); };
-      form.appendChild(urlInput);
+      // source type toggle
+      var srcLabel = document.createElement('label');
+      srcLabel.textContent = 'แหล่งข้อมูล';
+      form.appendChild(srcLabel);
+      var toggle = document.createElement('div');
+      toggle.className = 'hive-tabs source-toggle';
+      ['sheet', 'file'].forEach(function (type) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = type === 'sheet' ? 'ลิงก์ Google ชีต' : 'ไฟล์ CSV / Excel';
+        b.className = hive.sourceType === type ? 'active' : '';
+        b.onclick = function () { hive.sourceType = type; renderDrawerForms(); };
+        toggle.appendChild(b);
+      });
+      form.appendChild(toggle);
  
-      var testRow = document.createElement('div');
-      testRow.className = 'test-row';
-      var testBtn = document.createElement('button');
-      testBtn.className = 'testbtn';
-      testBtn.type = 'button';
-      testBtn.textContent = 'ทดสอบลิงก์';
-      var testResult = document.createElement('span');
-      testResult.className = 'test-result';
-      testBtn.onclick = function () {
+      if (hive.sourceType === 'file') {
+        var fileInfo = document.createElement('div');
+        fileInfo.className = 'hive-empty';
+        fileInfo.style.margin = '0 0 8px';
+        fileInfo.textContent = hive.fileName
+          ? ('ไฟล์ปัจจุบัน: ' + hive.fileName + ' (' + (hive.fileRows ? hive.fileRows.length : 0) + ' แถว)')
+          : 'ยังไม่ได้นำเข้าไฟล์';
+        form.appendChild(fileInfo);
+ 
+        var fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.csv,.xlsx,.xls';
+        form.appendChild(fileInput);
+ 
+        var fileTestRow = document.createElement('div');
+        fileTestRow.className = 'test-row';
+        var fileResult = document.createElement('span');
+        fileResult.className = 'test-result';
+        fileInput.onchange = function () {
+          var f = fileInput.files && fileInput.files[0];
+          if (!f) return;
+          fileResult.className = 'test-result';
+          fileResult.textContent = 'กำลังนำเข้า…';
+          parseImportedFile(f).then(function (rows) {
+            if (!rows.length) {
+              fileResult.className = 'test-result fail';
+              fileResult.textContent = '✕ ไม่พบข้อมูลที่อ่านได้ ตรวจสอบลำดับคอลัมน์: วันที่/เวลา, อุณหภูมิ, ความชื้น, น้ำหนัก';
+              return;
+            }
+            hive.fileRows = rows.map(function (r) { return { date: r.date.getTime(), temp: r.temp, hum: r.hum, weight: r.weight }; });
+            hive.fileName = f.name;
+            hive.fileImportedAt = Date.now();
+            fileResult.className = 'test-result ok';
+            fileResult.textContent = '✓ นำเข้าสำเร็จ (' + rows.length + ' แถว)';
+            fileInfo.textContent = 'ไฟล์ปัจจุบัน: ' + f.name + ' (' + rows.length + ' แถว)';
+          }).catch(function (err) {
+            fileResult.className = 'test-result fail';
+            fileResult.textContent = '✕ ' + (err.message || 'นำเข้าไฟล์ไม่สำเร็จ');
+          });
+        };
+        fileTestRow.appendChild(fileResult);
+        form.appendChild(fileTestRow);
+      } else {
+        var urlLabel = document.createElement('label');
+        urlLabel.textContent = 'ลิงก์ Google ชีต';
+        form.appendChild(urlLabel);
+        var urlInput = document.createElement('input');
+        urlInput.type = 'text';
+        urlInput.placeholder = 'https://docs.google.com/spreadsheets/d/…';
+        urlInput.value = hive.url || '';
+        urlInput.oninput = function () { hive.url = urlInput.value.trim(); };
+        form.appendChild(urlInput);
+ 
+        var testRow = document.createElement('div');
+        testRow.className = 'test-row';
+        var testBtn = document.createElement('button');
+        testBtn.className = 'testbtn';
+        testBtn.type = 'button';
+        testBtn.textContent = 'ทดสอบลิงก์';
+        var testResult = document.createElement('span');
         testResult.className = 'test-result';
-        testResult.textContent = 'กำลังทดสอบ…';
-        fetchHive(hive).then(function (res) {
-          if (res.error) {
-            testResult.className = 'test-result fail';
-            testResult.textContent = '✕ ' + res.error;
-          } else if (res.empty) {
-            testResult.className = 'test-result fail';
-            testResult.textContent = '✕ ยังไม่ได้ใส่ลิงก์';
-          } else {
-            testResult.className = 'test-result ok';
-            testResult.textContent = '✓ เชื่อมต่อสำเร็จ (' + res.rows.length + ' แถว)';
-          }
-        });
-      };
-      testRow.appendChild(testBtn);
-      testRow.appendChild(testResult);
-      form.appendChild(testRow);
+        testBtn.onclick = function () {
+          testResult.className = 'test-result';
+          testResult.textContent = 'กำลังทดสอบ…';
+          fetchHive(hive).then(function (res) {
+            if (res.error) {
+              testResult.className = 'test-result fail';
+              testResult.textContent = '✕ ' + res.error;
+            } else if (res.empty) {
+              testResult.className = 'test-result fail';
+              testResult.textContent = '✕ ยังไม่ได้ใส่ลิงก์';
+            } else {
+              testResult.className = 'test-result ok';
+              testResult.textContent = '✓ เชื่อมต่อสำเร็จ (' + res.rows.length + ' แถว)';
+            }
+          });
+        };
+        testRow.appendChild(testBtn);
+        testRow.appendChild(testResult);
+        form.appendChild(testRow);
+      }
  
       list.appendChild(form);
     });
@@ -929,7 +1089,7 @@
  
   document.getElementById('addHiveBtn').onclick = function () {
     var color = PALETTE[draftHives.length % PALETTE.length];
-    draftHives.push({ id: 'h' + Date.now(), name: 'รังที่ ' + (draftHives.length + 1), url: '', color: color });
+    draftHives.push({ id: 'h' + Date.now(), name: 'รังที่ ' + (draftHives.length + 1), sourceType: 'sheet', url: '', color: color });
     renderDrawerForms();
   };
   document.getElementById('saveBtn').onclick = function () {
