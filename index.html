@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
   :root {
     box-sizing: border-box;
@@ -210,6 +211,16 @@
   }
   .hive-tabs button.active { background: var(--caramel); color: #fff; border-color: transparent; }
  
+  .chart-toolbar { padding: 18px 18px 4px; }
+  .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 16px; }
+  .chart-block { padding: 18px 18px 12px; }
+  .chart-block h3 { margin: 0 0 2px; font-size: 15px; font-weight: 600; }
+  .chart-block .caption { margin: 0 0 12px; color: var(--ink-soft); font-size: 12.5px; }
+  .chart-block canvas { max-height: 200px; }
+  .chart-empty { font-size: 13px; color: var(--ink-soft); padding: 30px 4px; text-align: center; }
+ 
+  .history-table th.col-seq, .history-table td.col-seq { color: var(--ink-soft); font-weight: 400; width: 1%; }
+ 
   .history-card { margin-top: 16px; padding: 18px 18px 14px; }
   .history-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
   .history-granularity { margin-bottom: 0; }
@@ -371,13 +382,13 @@
  
   <div class="section-head">
     <div>
-      <h2>ประวัติข้อมูล</h2>
-      <span class="caption">ดูข้อมูลย้อนหลังทั้งหมดของแต่ละรังตามที่บันทึกไว้ในชีต</span>
+      <h2>กราฟ</h2>
+      <span class="caption">เลือกรังและช่วงเวลาเพื่อดูแนวโน้มข้อมูล</span>
     </div>
     <div class="hive-tabs" id="historyTabs"></div>
   </div>
-  <div class="history-card glass" id="historyCard">
-    <div class="history-toolbar">
+  <div class="glass chart-toolbar">
+    <div class="history-toolbar" style="margin-bottom:0;">
       <div class="hive-tabs history-granularity" id="historyGranularity">
         <button data-g="day" class="active" type="button">รายวัน</button>
         <button data-g="week" type="button">รายสัปดาห์ (7 วันล่าสุด)</button>
@@ -387,10 +398,40 @@
         เลือกวันที่ <input type="date" id="historyDate">
       </label>
     </div>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-block glass">
+      <h3>อุณหภูมิ</h3>
+      <p class="caption">ควบคุมอุณหภูมิภายในรัง</p>
+      <canvas id="chartTemp"></canvas>
+      <div class="chart-empty" id="chartTempEmpty" style="display:none;">ไม่มีข้อมูลในช่วงที่เลือก</div>
+    </div>
+    <div class="chart-block glass">
+      <h3>ความชื้น</h3>
+      <p class="caption">ความชื้นสัมพัทธ์ในรัง</p>
+      <canvas id="chartHum"></canvas>
+      <div class="chart-empty" id="chartHumEmpty" style="display:none;">ไม่มีข้อมูลในช่วงที่เลือก</div>
+    </div>
+    <div class="chart-block glass">
+      <h3>น้ำหนัก</h3>
+      <p class="caption">น้ำหนักรวมของรัง</p>
+      <canvas id="chartWeight"></canvas>
+      <div class="chart-empty" id="chartWeightEmpty" style="display:none;">ไม่มีข้อมูลในช่วงที่เลือก</div>
+    </div>
+  </div>
+ 
+  <div class="section-head">
+    <div>
+      <h2>ประวัติข้อมูล</h2>
+      <span class="caption">ตารางข้อมูลย้อนหลัง ตามรังและช่วงเวลาที่เลือกไว้ด้านบน</span>
+    </div>
+  </div>
+  <div class="history-card glass" id="historyCard">
     <div class="history-table-wrap">
       <table class="history-table">
         <thead>
           <tr>
+            <th class="col-seq">ลำดับ</th>
             <th id="historyColLabel">เวลา</th>
             <th>อุณหภูมิ (°C)</th><th>ความชื้น (%)</th><th>น้ำหนัก (ก.)</th>
           </tr>
@@ -821,6 +862,7 @@
         state.historyDate = null;
         renderHistoryTabs();
         renderHistoryTable();
+        renderCharts();
       };
       wrap.appendChild(btn);
     });
@@ -853,6 +895,23 @@
     tr.appendChild(td);
   }
  
+  // rows for the currently selected hive + granularity/date, ascending by time.
+  // shared by both the history table and the charts so they always agree.
+  function getFilteredRowsAsc() {
+    if (!state.historyHiveId) return [];
+    var res = state.data[state.historyHiveId];
+    var rawRows = (res && res.rows) ? res.rows : [];
+    if (!rawRows.length) return [];
+    var g = state.historyGranularity;
+    if (g === 'day') {
+      var target = state.historyDate;
+      return rawRows.filter(function (r) { return dateKeyStr(r.date) === target; });
+    }
+    var days = g === 'week' ? 7 : 30;
+    var cutoff = Date.now() - days * 24 * 3600 * 1000;
+    return rawRows.filter(function (r) { return r.date.getTime() >= cutoff; });
+  }
+ 
   function renderHistoryTable() {
     var tbody = document.getElementById('historyTbody');
     var countEl = document.getElementById('historyCount');
@@ -882,47 +941,83 @@
     syncHistoryDatePicker();
  
     var res = state.data[state.historyHiveId];
-    var rawRows = (res && res.rows) ? res.rows : []; // ascending
+    var rawRows = (res && res.rows) ? res.rows : [];
  
     if (!rawRows.length) {
       countEl.textContent = res && res.error ? 'เชื่อมต่อไม่สำเร็จ: ' + res.error : 'ยังไม่มีข้อมูลจากแหล่งนี้';
       return;
     }
  
+    var filtered = getFilteredRowsAsc().slice().reverse(); // newest first for the table
+    filtered.forEach(function (r, i) {
+      var tr = document.createElement('tr');
+      appendCell(tr, filtered.length - i);
+      tr.lastChild.className = 'col-seq';
+      appendCell(tr, g === 'day' ? fmtTime(r.date) : (fmtDay(r.date) + ' ' + fmtTime(r.date)));
+      appendCell(tr, isNaN(r.temp) ? '—' : round1(r.temp));
+      appendCell(tr, isNaN(r.hum) ? '—' : round1(r.hum));
+      appendCell(tr, isNaN(r.weight) ? '—' : round1(r.weight));
+      tbody.appendChild(tr);
+    });
+ 
     if (g === 'day') {
       var target = state.historyDate;
-      var dayRows = rawRows.filter(function (r) { return dateKeyStr(r.date) === target; }).slice().reverse(); // newest first
-      dayRows.forEach(function (r) {
-        var tr = document.createElement('tr');
-        appendCell(tr, fmtTime(r.date));
-        appendCell(tr, isNaN(r.temp) ? '—' : round1(r.temp));
-        appendCell(tr, isNaN(r.hum) ? '—' : round1(r.hum));
-        appendCell(tr, isNaN(r.weight) ? '—' : round1(r.weight));
-        tbody.appendChild(tr);
-      });
-      countEl.textContent = dayRows.length
-        ? ('พบ ' + dayRows.length + ' ค่าอ่าน ในวันที่ ' + fmtDay(parseDateKey(target)) + '/' + target.split('-')[0])
+      countEl.textContent = filtered.length
+        ? ('พบ ' + filtered.length + ' ค่าอ่าน ในวันที่ ' + fmtDay(parseDateKey(target)) + '/' + target.split('-')[0])
         : 'ไม่มีข้อมูลในวันที่เลือก';
     } else {
-      var days = g === 'week' ? 7 : 30;
-      var cutoff = Date.now() - days * 24 * 3600 * 1000;
-      var windowRows = rawRows.filter(function (r) { return r.date.getTime() >= cutoff; }).slice().reverse(); // newest first
-      windowRows.forEach(function (r) {
-        var tr = document.createElement('tr');
-        appendCell(tr, fmtDay(r.date) + ' ' + fmtTime(r.date));
-        appendCell(tr, isNaN(r.temp) ? '—' : round1(r.temp));
-        appendCell(tr, isNaN(r.hum) ? '—' : round1(r.hum));
-        appendCell(tr, isNaN(r.weight) ? '—' : round1(r.weight));
-        tbody.appendChild(tr);
-      });
       var windowLabel = g === 'week' ? '7 วันล่าสุด' : '30 วันล่าสุด';
-      countEl.textContent = windowRows.length
-        ? ('มีข้อมูลทั้งหมด ' + windowRows.length + ' ค่า ในช่วง ' + windowLabel)
+      countEl.textContent = filtered.length
+        ? ('มีข้อมูลทั้งหมด ' + filtered.length + ' ค่า ในช่วง ' + windowLabel)
         : ('ไม่มีข้อมูลในช่วง ' + windowLabel);
     }
   }
+ 
+  // ---------- render: charts (mirror the same filtered rows as the history table) ----------
+  var chartInstances = {};
+  function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function drawOneChart(canvasId, emptyId, key, rows, labels, color) {
+    var canvas = document.getElementById(canvasId);
+    var emptyEl = document.getElementById(emptyId);
+    if (chartInstances[canvasId]) { chartInstances[canvasId].destroy(); chartInstances[canvasId] = null; }
+    if (!rows.length) {
+      canvas.style.display = 'none';
+      emptyEl.style.display = 'block';
+      return;
+    }
+    canvas.style.display = 'block';
+    emptyEl.style.display = 'none';
+    var data = rows.map(function (r) { var v = r[key]; return isNaN(v) ? null : v; });
+    var ink = cssVar('--ink-soft');
+    var grid = cssVar('--glass-border');
+    chartInstances[canvasId] = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: { labels: labels, datasets: [{ data: data, borderColor: color, backgroundColor: color, spanGaps: true, tension: 0.3, pointRadius: labels.length > 50 ? 0 : 2, borderWidth: 2 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: ink, maxRotation: 0, autoSkip: true, maxTicksLimit: 6, font: { family: 'Inter', size: 10.5 } }, grid: { color: grid } },
+          y: { ticks: { color: ink, font: { family: 'Inter', size: 10.5 } }, grid: { color: grid } }
+        }
+      }
+    });
+  }
+  function renderCharts() {
+    var rows = getFilteredRowsAsc();
+    var g = state.historyGranularity;
+    var labels = rows.map(function (r) { return g === 'day' ? fmtTime(r.date) : (fmtDay(r.date) + ' ' + fmtTime(r.date)); });
+    var hive = state.hives.find(function (h) { return h.id === state.historyHiveId; });
+    var color = hive ? hive.color : '#C7861E';
+    if (typeof Chart === 'undefined') return;
+    drawOneChart('chartTemp', 'chartTempEmpty', 'temp', rows, labels, color);
+    drawOneChart('chartHum', 'chartHumEmpty', 'hum', rows, labels, color);
+    drawOneChart('chartWeight', 'chartWeightEmpty', 'weight', rows, labels, color);
+  }
+ 
   document.getElementById('historyDate').addEventListener('change', function (e) {
-    if (e.target.value) { state.historyDate = e.target.value; renderHistoryTable(); }
+    if (e.target.value) { state.historyDate = e.target.value; renderHistoryTable(); renderCharts(); }
   });
   document.getElementById('historyGranularity').addEventListener('click', function (e) {
     var btn = e.target.closest('button[data-g]');
@@ -932,6 +1027,7 @@
       b.classList.toggle('active', b === btn);
     });
     renderHistoryTable();
+    renderCharts();
   });
  
   function renderAll() {
@@ -939,6 +1035,7 @@
     ensureHistoryHive();
     renderHistoryTabs();
     renderHistoryTable();
+    renderCharts();
     renderStatus();
   }
  
