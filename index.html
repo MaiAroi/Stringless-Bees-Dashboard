@@ -12,7 +12,7 @@
     box-sizing: border-box;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
-
+ 
     --bg-a: #FDF6E3;
     --bg-b: #FBE9C6;
     --bg-c: #F6D9A0;
@@ -28,7 +28,7 @@
     --clay: #A44F31;
     --warn: #A6431F;
     --caramel: #B0793D;
-
+ 
     /* glass / bubble tokens */
     --glass: rgba(255, 253, 246, 0.5);
     --glass-strong: rgba(255, 253, 246, 0.72);
@@ -53,7 +53,7 @@
       --clay: #D07C57;
       --warn: #E08A5C;
       --caramel: #CB9457;
-
+ 
       --glass: rgba(38, 29, 16, 0.5);
       --glass-strong: rgba(44, 34, 19, 0.72);
       --glass-border: rgba(227, 169, 59, 0.22);
@@ -77,14 +77,14 @@
     --clay: #D07C57;
     --warn: #E08A5C;
     --caramel: #CB9457;
-
+ 
     --glass: rgba(38, 29, 16, 0.5);
     --glass-strong: rgba(44, 34, 19, 0.72);
     --glass-border: rgba(227, 169, 59, 0.22);
     --glass-highlight: rgba(255, 232, 180, 0.08);
     --glass-shadow: rgba(0, 0, 0, 0.35);
   }
-
+ 
   * { box-sizing: inherit; }
   html { scroll-padding-top: env(safe-area-inset-top, 0px); }
   html, body { height: 100%; }
@@ -99,9 +99,9 @@
   }
   h1, h2 { font-family: 'Inter', system-ui, sans-serif; letter-spacing: -0.01em; }
   .display { font-family: 'Fraunces', Georgia, serif; }
-
+ 
   .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px 64px; position: relative; z-index: 1; }
-
+ 
   /* ---------- Glass / bubble surface (shared) ---------- */
   .glass {
     background: var(--glass);
@@ -113,7 +113,7 @@
       0 14px 34px -18px var(--glass-shadow),
       inset 0 1px 0 var(--glass-highlight);
   }
-
+ 
   /* ---------- Header ---------- */
   .topbar {
     position: sticky;
@@ -140,7 +140,7 @@
   .topbar-actions { display: flex; align-items: center; gap: 10px; }
   .status-line { font-size: 13px; color: var(--ink-soft); text-align: right; margin-right: 4px; }
   .status-line strong { color: var(--ink); font-weight: 600; }
-
+ 
   button.iconbtn {
     border: 1px solid var(--glass-border);
     background: var(--glass-strong);
@@ -157,12 +157,12 @@
   button.iconbtn:active { transform: scale(0.94); }
   button.iconbtn.spinning svg { animation: spin 0.9s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
+ 
   /* ---------- Hive grid ---------- */
   .section-head { margin: 40px 0 16px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .section-head h2 { margin: 0; font-size: 21px; font-weight: 600; }
   .section-head .caption { color: var(--ink-soft); font-size: 13.5px; }
-
+ 
   .hive-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -190,7 +190,7 @@
   .reading .delta { font-size: 11.5px; margin-left: 6px; font-family: 'Inter', sans-serif; font-weight: 600; }
   .delta.up { color: var(--moss); }
   .delta.down { color: var(--clay); }
-
+ 
   .hive-empty, .hive-error {
     font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; padding: 6px 0 4px;
   }
@@ -199,7 +199,7 @@
     background: none; border: none; color: var(--amber-ink); text-decoration: underline;
     cursor: pointer; font-size: 13.5px; padding: 0; font-family: inherit;
   }
-
+ 
   /* ---------- History table ---------- */
   .hive-tabs { display: inline-flex; flex-wrap: wrap; gap: 8px; }
   .hive-tabs button {
@@ -208,8 +208,9 @@
     border-radius: 999px; cursor: pointer; font-family: 'Inter', sans-serif;
   }
   .hive-tabs button.active { background: var(--caramel); color: #fff; border-color: transparent; }
-
+ 
   .history-card { margin-top: 16px; padding: 18px 18px 14px; }
+  .history-granularity { margin-bottom: 14px; }
   .history-table-wrap { max-height: 380px; overflow-y: auto; border-radius: 14px; border: 1px solid var(--glass-border); }
   .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .history-table thead th {
@@ -226,9 +227,9 @@
   .history-table tbody tr:last-child td { border-bottom: none; }
   .history-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
   .history-empty { padding: 18px 4px; color: var(--ink-soft); font-size: 13.5px; }
-
+ 
   footer { margin-top: 44px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.6; padding: 16px 20px; }
-
+ 
   /* ---------- Settings drawer ---------- */
   .scrim {
     position: fixed; inset: 0; background: rgba(20, 15, 5, 0.35);
@@ -247,7 +248,7 @@
   .drawer-inner { padding: 22px 20px 40px; }
   .drawer-inner h2 { margin: 0 0 4px; font-size: 20px; }
   .drawer-inner .caption { color: var(--ink-soft); font-size: 13px; margin: 0 0 20px; line-height: 1.5; }
-
+ 
   .hive-form {
     border: 1px solid var(--glass-border);
     background: var(--glass-strong);
@@ -275,14 +276,14 @@
   .test-result { font-size: 12px; }
   .test-result.ok { color: var(--moss); }
   .test-result.fail { color: var(--warn); }
-
+ 
   .addbtn {
     width: 100%; padding: 12px; border: 1px dashed var(--glass-border); background: none;
     color: var(--ink-soft); border-radius: 16px; cursor: pointer; font-size: 13.5px; font-family: inherit;
     margin-bottom: 18px;
   }
   .addbtn:hover { border-color: var(--amber); color: var(--amber-ink); }
-
+ 
   .drawer-actions { display: flex; gap: 10px; margin-top: 6px; }
   .btn-primary, .btn-secondary {
     flex: 1; padding: 11px; border-radius: 999px; font-size: 14px; font-weight: 600;
@@ -290,10 +291,10 @@
   }
   .btn-primary { background: var(--amber); color: #1c1406; }
   .btn-secondary { background: none; border-color: var(--glass-border); color: var(--ink); }
-
+ 
   .field-row { display: flex; gap: 10px; }
   .field-row > div { flex: 1; }
-
+ 
   @media (max-width: 560px) {
     .status-line { display: none; }
     .topbar { top: 8px; padding: 18px 16px; }
@@ -302,7 +303,7 @@
 </style>
 </head>
 <body>
-
+ 
 <header class="topbar glass">
   <div class="topbar-inner">
     <div class="brand">
@@ -348,15 +349,15 @@
     </div>
   </div>
 </header>
-
+ 
 <div class="wrap">
-
+ 
   <div class="section-head">
     <h2>ค่าล่าสุดรายรัง</h2>
     <span class="caption" id="hiveCountCaption"></span>
   </div>
   <div class="hive-grid" id="hiveGrid"></div>
-
+ 
   <div class="section-head">
     <div>
       <h2>ประวัติข้อมูล</h2>
@@ -365,10 +366,19 @@
     <div class="hive-tabs" id="historyTabs"></div>
   </div>
   <div class="history-card glass" id="historyCard">
+    <div class="hive-tabs history-granularity" id="historyGranularity">
+      <button data-g="hour" class="active" type="button">รายชั่วโมง</button>
+      <button data-g="day" type="button">รายวัน</button>
+      <button data-g="week" type="button">รายสัปดาห์</button>
+      <button data-g="month" type="button">รายเดือน</button>
+    </div>
     <div class="history-table-wrap">
       <table class="history-table">
         <thead>
-          <tr><th>วันที่ / เวลา</th><th>อุณหภูมิ (°C)</th><th>ความชื้น (%)</th><th>น้ำหนัก (ก.)</th></tr>
+          <tr>
+            <th id="historyColLabel">วันที่ / เวลา</th>
+            <th>อุณหภูมิ (°C)</th><th>ความชื้น (%)</th><th>น้ำหนัก (ก.)</th>
+          </tr>
         </thead>
         <tbody id="historyTbody"></tbody>
       </table>
@@ -378,12 +388,12 @@
       <button class="testbtn" id="historyLoadMore" type="button">โหลดเพิ่มเติม</button>
     </div>
   </div>
-
+ 
   <footer class="glass">
     ดึงข้อมูลตรงจาก Google ชีตของแต่ละรัง (ต้องแชร์แบบ "ทุกคนที่มีลิงก์ดูได้") รีเฟรชอัตโนมัติทุก 5 นาที การตั้งค่าลิงก์ถูกบันทึกไว้ในเบราว์เซอร์นี้เท่านั้น
   </footer>
 </div>
-
+ 
 <div class="scrim" id="scrim"></div>
 <aside class="drawer glass" id="drawer" aria-label="ตั้งค่าลิงก์รัง">
   <div class="drawer-inner">
@@ -397,30 +407,31 @@
     </div>
   </div>
 </aside>
-
+ 
 <script>
 (function () {
   "use strict";
-
+ 
   var STORAGE_KEY = 'chanrong-hives-v1';
   var THEME_KEY = 'chanrong-theme';
   var PALETTE = ['#C7861E', '#52713C', '#3A7472', '#A44F31', '#7A5FA8', '#3B6E9C'];
-
+ 
   var DEFAULT_HIVES = [
     { id: 'h1', name: 'รังที่ 1', url: 'https://docs.google.com/spreadsheets/d/1Z3stbTTjkv_cIfGvNMidheTTAc7tMGKxvTJidm54HEM/edit?usp=sharing', color: PALETTE[0] },
     { id: 'h2', name: 'รังที่ 2', url: '', color: PALETTE[1] },
     { id: 'h3', name: 'รังที่ 3', url: '', color: PALETTE[2] }
   ];
-
+ 
   var state = {
     hives: loadHives(),
     data: {},       // id -> { rows, error, fetchedAt }
     lastRefresh: null,
     historyHiveId: null,
-    historyLimit: 100
+    historyLimit: 100,
+    historyGranularity: 'hour'
   };
   var HISTORY_PAGE = 100;
-
+ 
   // ---------- persistence ----------
   function loadHives() {
     try {
@@ -445,7 +456,7 @@
       document.documentElement.removeAttribute('data-theme');
     }
   }
-
+ 
   // ---------- google sheet parsing ----------
   function extractSheetId(url) {
     var m = (url || '').match(/\/d\/([a-zA-Z0-9-_]+)/);
@@ -492,7 +503,7 @@
     var n = parseFloat(String(v).replace(',', '.'));
     return n;
   }
-
+ 
   function fetchHive(hive) {
     if (!hive.url) return Promise.resolve({ rows: [], error: null, empty: true });
     var gurl = buildGvizUrl(hive.url);
@@ -521,7 +532,7 @@
         return { rows: [], error: err.message || 'โหลดข้อมูลไม่สำเร็จ — ตรวจสอบว่าแชร์ชีตแบบ "ทุกคนที่มีลิงก์ดูได้"' };
       });
   }
-
+ 
   function refreshAll() {
     var btn = document.getElementById('refreshBtn');
     btn.classList.add('spinning');
@@ -535,7 +546,7 @@
       renderAll();
     });
   }
-
+ 
   // ---------- formatting ----------
   function fmtTime(d) {
     return pad(d.getHours()) + ':' + pad(d.getMinutes());
@@ -552,31 +563,31 @@
     if (s < 86400) return Math.floor(s / 3600) + ' ชม.ที่แล้ว';
     return Math.floor(s / 86400) + ' วันที่แล้ว';
   }
-
+ 
   // ---------- render: hive cards ----------
   function renderHiveGrid() {
     var grid = document.getElementById('hiveGrid');
     grid.innerHTML = '';
     document.getElementById('hiveCountCaption').textContent = state.hives.length + ' รัง';
-
+ 
     state.hives.forEach(function (hive, idx) {
       var panel = document.createElement('div');
       panel.className = 'hive-panel glass';
       panel.style.setProperty('--glass-border', hive.color + '55');
-
+ 
       var cap = document.createElement('div');
       cap.className = 'hex-cap';
       cap.style.background = 'var(--caramel)';
       cap.textContent = idx + 1;
       panel.appendChild(cap);
-
+ 
       var name = document.createElement('p');
       name.className = 'hive-name';
       name.textContent = hive.name || ('รังที่ ' + (idx + 1));
       panel.appendChild(name);
-
+ 
       var res = state.data[hive.id];
-
+ 
       if (!hive.url) {
         var meta = document.createElement('div');
         meta.className = 'hive-meta';
@@ -594,7 +605,7 @@
         grid.appendChild(panel);
         return;
       }
-
+ 
       if (!res) {
         var loading = document.createElement('div');
         loading.className = 'hive-meta';
@@ -603,7 +614,7 @@
         grid.appendChild(panel);
         return;
       }
-
+ 
       if (res.error) {
         var meta2 = document.createElement('div');
         meta2.className = 'hive-meta stale';
@@ -616,7 +627,7 @@
         grid.appendChild(panel);
         return;
       }
-
+ 
       if (!res.rows.length) {
         var meta3 = document.createElement('div');
         meta3.className = 'hive-meta';
@@ -629,24 +640,24 @@
         grid.appendChild(panel);
         return;
       }
-
+ 
       var last = res.rows[res.rows.length - 1];
       var prev = res.rows.length > 1 ? res.rows[res.rows.length - 2] : null;
       var stale = (Date.now() - last.date.getTime()) > 2 * 3600 * 1000;
-
+ 
       var meta = document.createElement('div');
       meta.className = 'hive-meta' + (stale ? ' stale' : '');
       meta.textContent = (stale ? '⚠ ' : '') + 'อัปเดต ' + fmtDay(last.date) + ' ' + fmtTime(last.date) + (stale ? ' (ข้อมูลอาจค้าง)' : '');
       panel.appendChild(meta);
-
+ 
       panel.appendChild(readingRow('อุณหภูมิ', last.temp, prev ? prev.temp : null, '°C'));
       panel.appendChild(readingRow('ความชื้น', last.hum, prev ? prev.hum : null, '%'));
       panel.appendChild(readingRow('น้ำหนัก', last.weight, prev ? prev.weight : null, ' ก.'));
-
+ 
       grid.appendChild(panel);
     });
   }
-
+ 
   function readingRow(label, val, prevVal, unit) {
     var row = document.createElement('div');
     row.className = 'reading';
@@ -672,14 +683,14 @@
     return row;
   }
   function round1(n) { return Math.round(n * 10) / 10; }
-
+ 
   function renderStatus() {
     var el = document.getElementById('statusLine');
     if (state.lastRefresh) {
       el.innerHTML = 'อัปเดตล่าสุด <strong>' + relTime(state.lastRefresh) + '</strong>';
     }
   }
-
+ 
   // ---------- render: history table ----------
   function ensureHistoryHive() {
     var withUrl = state.hives.filter(function (h) { return h.url; });
@@ -707,13 +718,71 @@
       wrap.appendChild(btn);
     });
   }
+ 
+  var MONTH_NAMES_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  function bucketStart(date, granularity) {
+    if (granularity === 'day') return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    if (granularity === 'week') {
+      var d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      var dow = (d.getDay() + 6) % 7; // Monday = 0
+      d.setDate(d.getDate() - dow);
+      return d;
+    }
+    if (granularity === 'month') return new Date(date.getFullYear(), date.getMonth(), 1);
+    return date;
+  }
+  function bucketLabel(start, granularity) {
+    if (granularity === 'day') return fmtDay(start) + '/' + start.getFullYear();
+    if (granularity === 'week') {
+      var end = new Date(start);
+      end.setDate(end.getDate() + 6);
+      return fmtDay(start) + ' – ' + fmtDay(end) + '/' + end.getFullYear();
+    }
+    if (granularity === 'month') return MONTH_NAMES_TH[start.getMonth()] + ' ' + start.getFullYear();
+    return fmtDay(start) + ' ' + fmtTime(start);
+  }
+  function avgOf(sum, count) { return count ? sum / count : NaN; }
+  function aggregateRows(rows, granularity) {
+    if (granularity === 'hour') return rows; // already newest-first raw rows
+    var map = {};
+    var order = [];
+    rows.forEach(function (r) {
+      var b = bucketStart(r.date, granularity);
+      var k = b.getTime();
+      if (!map[k]) {
+        map[k] = { start: b, tempSum: 0, tempCount: 0, humSum: 0, humCount: 0, weightSum: 0, weightCount: 0, readings: 0 };
+        order.push(k);
+      }
+      var g = map[k];
+      g.readings++;
+      if (!isNaN(r.temp)) { g.tempSum += r.temp; g.tempCount++; }
+      if (!isNaN(r.hum)) { g.humSum += r.hum; g.humCount++; }
+      if (!isNaN(r.weight)) { g.weightSum += r.weight; g.weightCount++; }
+    });
+    var groups = order.map(function (k) {
+      var g = map[k];
+      return {
+        date: g.start,
+        temp: avgOf(g.tempSum, g.tempCount),
+        hum: avgOf(g.humSum, g.humCount),
+        weight: avgOf(g.weightSum, g.weightCount),
+        readings: g.readings
+      };
+    });
+    groups.sort(function (a, b) { return b.date - a.date; }); // newest first
+    return groups;
+  }
+ 
   function renderHistoryTable() {
     var tbody = document.getElementById('historyTbody');
     var countEl = document.getElementById('historyCount');
     var loadMoreBtn = document.getElementById('historyLoadMore');
     var card = document.getElementById('historyCard');
+    var colLabel = document.getElementById('historyColLabel');
+    var g = state.historyGranularity;
     tbody.innerHTML = '';
-
+    colLabel.textContent = g === 'hour' ? 'วันที่ / เวลา' : g === 'day' ? 'วันที่' : g === 'week' ? 'สัปดาห์' : 'เดือน';
+ 
     if (!state.historyHiveId) {
       card.querySelector('.history-table-wrap').style.display = 'none';
       loadMoreBtn.style.display = 'none';
@@ -729,15 +798,17 @@
     var existingEmpty = card.querySelector('.history-empty');
     if (existingEmpty) existingEmpty.remove();
     card.querySelector('.history-table-wrap').style.display = '';
-
+ 
     var res = state.data[state.historyHiveId];
-    var rows = (res && res.rows) ? res.rows.slice().reverse() : []; // newest first
+    var rawRows = (res && res.rows) ? res.rows.slice().reverse() : []; // newest first
+    var rows = aggregateRows(rawRows, g);
     var shown = rows.slice(0, state.historyLimit);
-
+ 
     shown.forEach(function (r) {
       var tr = document.createElement('tr');
       var tdDate = document.createElement('td');
-      tdDate.textContent = fmtDay(r.date) + ' ' + fmtTime(r.date);
+      tdDate.textContent = bucketLabel(r.date, g);
+      if (g !== 'hour' && r.readings) tdDate.textContent += ' (' + r.readings + ' ครั้ง)';
       var tdTemp = document.createElement('td');
       tdTemp.textContent = isNaN(r.temp) ? '—' : round1(r.temp);
       var tdHum = document.createElement('td');
@@ -747,11 +818,12 @@
       tr.appendChild(tdDate); tr.appendChild(tdTemp); tr.appendChild(tdHum); tr.appendChild(tdWeight);
       tbody.appendChild(tr);
     });
-
-    if (!rows.length) {
+ 
+    if (!rawRows.length) {
       countEl.textContent = res && res.error ? 'เชื่อมต่อไม่สำเร็จ: ' + res.error : 'ยังไม่มีข้อมูลจากเซนเซอร์ในชีตนี้';
     } else {
-      countEl.textContent = 'แสดง ' + shown.length + ' จากทั้งหมด ' + rows.length + ' แถว';
+      var unitLabel = g === 'hour' ? 'แถว' : g === 'day' ? 'วัน' : g === 'week' ? 'สัปดาห์' : 'เดือน';
+      countEl.textContent = 'แสดง ' + shown.length + ' จากทั้งหมด ' + rows.length + ' ' + unitLabel;
     }
     loadMoreBtn.style.display = shown.length < rows.length ? '' : 'none';
   }
@@ -759,7 +831,17 @@
     state.historyLimit += HISTORY_PAGE;
     renderHistoryTable();
   };
-
+  document.getElementById('historyGranularity').addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-g]');
+    if (!btn) return;
+    state.historyGranularity = btn.getAttribute('data-g');
+    state.historyLimit = HISTORY_PAGE;
+    Array.prototype.forEach.call(document.querySelectorAll('#historyGranularity button'), function (b) {
+      b.classList.toggle('active', b === btn);
+    });
+    renderHistoryTable();
+  });
+ 
   function renderAll() {
     renderHiveGrid();
     ensureHistoryHive();
@@ -767,7 +849,7 @@
     renderHistoryTable();
     renderStatus();
   }
-
+ 
   // ---------- settings drawer ----------
   var draftHives = [];
   function openDrawer() {
@@ -786,7 +868,7 @@
     draftHives.forEach(function (hive, idx) {
       var form = document.createElement('div');
       form.className = 'hive-form';
-
+ 
       var top = document.createElement('div');
       top.className = 'hive-form-top';
       var title = document.createElement('span');
@@ -800,7 +882,7 @@
         top.appendChild(rm);
       }
       form.appendChild(top);
-
+ 
       var nameLabel = document.createElement('label');
       nameLabel.textContent = 'ชื่อรัง';
       form.appendChild(nameLabel);
@@ -809,7 +891,7 @@
       nameInput.value = hive.name;
       nameInput.oninput = function () { hive.name = nameInput.value; };
       form.appendChild(nameInput);
-
+ 
       var urlLabel = document.createElement('label');
       urlLabel.textContent = 'ลิงก์ Google ชีต';
       form.appendChild(urlLabel);
@@ -819,7 +901,7 @@
       urlInput.value = hive.url;
       urlInput.oninput = function () { hive.url = urlInput.value.trim(); };
       form.appendChild(urlInput);
-
+ 
       var testRow = document.createElement('div');
       testRow.className = 'test-row';
       var testBtn = document.createElement('button');
@@ -847,11 +929,11 @@
       testRow.appendChild(testBtn);
       testRow.appendChild(testResult);
       form.appendChild(testRow);
-
+ 
       list.appendChild(form);
     });
   }
-
+ 
   document.getElementById('addHiveBtn').onclick = function () {
     var color = PALETTE[draftHives.length % PALETTE.length];
     draftHives.push({ id: 'h' + Date.now(), name: 'รังที่ ' + (draftHives.length + 1), url: '', color: color });
@@ -866,7 +948,7 @@
   document.getElementById('cancelBtn').onclick = closeDrawer;
   document.getElementById('scrim').onclick = closeDrawer;
   document.getElementById('settingsBtn').onclick = openDrawer;
-
+ 
   // ---------- theme toggle ----------
   applyTheme(loadTheme());
   document.getElementById('themeBtn').onclick = function () {
@@ -877,10 +959,10 @@
       if (next) localStorage.setItem(THEME_KEY, next); else localStorage.removeItem(THEME_KEY);
     } catch (e) {}
   };
-
+ 
   // ---------- refresh controls ----------
   document.getElementById('refreshBtn').onclick = refreshAll;
-
+ 
   // ---------- boot ----------
   refreshAll();
   setInterval(refreshAll, 5 * 60 * 1000);
