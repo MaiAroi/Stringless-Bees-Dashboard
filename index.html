@@ -210,7 +210,7 @@
     border-radius: 999px; cursor: pointer; font-family: 'Inter', sans-serif;
   }
   .hive-tabs button.active { background: var(--caramel); color: #fff; border-color: transparent; }
-
+ 
   .chart-toolbar { padding: 18px 18px 4px; }
   .chart-block { padding: 20px 20px 16px; margin-top: 16px; }
   .chart-block h3 { margin: 0 0 2px; font-size: 16px; font-weight: 600; }
@@ -220,7 +220,7 @@
   .legend-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 8px 0 12px; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-soft); font-weight: 600; }
   .legend-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-
+ 
   .history-table th.col-seq, .history-table td.col-seq { color: var(--ink-soft); font-weight: 400; width: 1%; }
  
   .history-card { margin-top: 16px; padding: 18px 18px 14px; }
@@ -573,7 +573,7 @@
     out.sort(function (a, b) { return a.date - b.date; });
     return out;
   }
-
+ 
   // ---------- CSV parsing (handles quoted fields, comma or semicolon separators) ----------
   function parseCSVText(text) {
     var lines = text.replace(/^\uFEFF/, '').replace(/\r/g, '').split('\n').filter(function (l) { return l.trim().length; });
@@ -599,7 +599,7 @@
       return cells.map(function (c) { return c.trim(); });
     });
   }
-
+ 
   // ---------- file reading helpers ----------
   function readFileAsText(file) {
     return new Promise(function (resolve, reject) {
@@ -617,7 +617,7 @@
       r.readAsArrayBuffer(file);
     });
   }
-
+ 
   // ---------- import a .csv / .xlsx / .xls file into hive rows ----------
   function parseImportedFile(file) {
     var name = file.name || '';
@@ -883,7 +883,7 @@
     td.textContent = text;
     tr.appendChild(td);
   }
-
+ 
   // rows for the currently selected hive + granularity/date, ascending by time.
   // shared by both the history table and the charts so they always agree.
   function getFilteredRowsAsc() {
@@ -900,7 +900,7 @@
     var cutoff = Date.now() - days * 24 * 3600 * 1000;
     return rawRows.filter(function (r) { return r.date.getTime() >= cutoff; });
   }
-
+ 
   function renderHistoryTable() {
     var tbody = document.getElementById('historyTbody');
     var countEl = document.getElementById('historyCount');
@@ -961,7 +961,7 @@
         : ('ไม่มีข้อมูลในช่วง ' + windowLabel);
     }
   }
-
+ 
   // ---------- render: combined multi-axis chart (mirrors the same filtered rows as the history table) ----------
   var combinedChart = null;
   function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
@@ -987,7 +987,7 @@
     var labels = rows.map(function (r) { return g === 'day' ? fmtTime(r.date) : (fmtDay(r.date) + ' ' + fmtTime(r.date)); });
     var canvas = document.getElementById('chartCombined');
     var emptyEl = document.getElementById('chartCombinedEmpty');
-
+ 
     var tempColor = cssVar('--amber');
     var humColor = cssVar('--teal');
     var weightColor = cssVar('--clay');
@@ -996,7 +996,7 @@
       { label: 'ความชื้น (%)', color: humColor },
       { label: 'น้ำหนัก (ก.)', color: weightColor }
     ]);
-
+ 
     if (combinedChart) { combinedChart.destroy(); combinedChart = null; }
     if (!rows.length || typeof Chart === 'undefined') {
       canvas.style.display = 'none';
@@ -1005,11 +1005,11 @@
     }
     canvas.style.display = 'block';
     emptyEl.style.display = 'none';
-
+ 
     var ink = cssVar('--ink-soft');
     var grid = cssVar('--glass-border');
     var pointRadius = labels.length > 50 ? 0 : 2;
-
+ 
     combinedChart = new Chart(canvas.getContext('2d'), {
       type: 'line',
       data: {
@@ -1027,12 +1027,14 @@
         scales: {
           x: { ticks: { color: ink, maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { family: 'Inter', size: 11 } }, grid: { color: grid } },
           yTemp: {
+            type: 'linear',
             position: 'left',
             ticks: { color: tempColor, font: { family: 'Inter', size: 10.5 } },
             grid: { color: grid },
             title: { display: true, text: '°C', color: tempColor, font: { family: 'Inter', size: 11, weight: '600' } }
           },
           yHum: {
+            type: 'linear',
             position: 'right',
             min: 0, max: 100,
             ticks: { color: humColor, font: { family: 'Inter', size: 10.5 } },
@@ -1040,6 +1042,7 @@
             title: { display: true, text: '%', color: humColor, font: { family: 'Inter', size: 11, weight: '600' } }
           },
           yWeight: {
+            type: 'linear',
             position: 'right',
             offset: true,
             ticks: { color: weightColor, font: { family: 'Inter', size: 10.5 } },
@@ -1050,7 +1053,7 @@
       }
     });
   }
-
+ 
   document.getElementById('historyDate').addEventListener('change', function (e) {
     if (e.target.value) { state.historyDate = e.target.value; renderHistoryTable(); renderCharts(); }
   });
@@ -1116,7 +1119,7 @@
       nameInput.value = hive.name;
       nameInput.oninput = function () { hive.name = nameInput.value; };
       form.appendChild(nameInput);
-
+ 
       // source type toggle
       var srcLabel = document.createElement('label');
       srcLabel.textContent = 'แหล่งข้อมูล';
