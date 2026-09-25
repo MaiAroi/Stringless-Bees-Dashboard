@@ -47,6 +47,11 @@
     --clay: #A44F31;
     --warn: #A6431F;
     --caramel: #B0793D;
+
+    /* alert status colors (kept distinct from the brand palette so they read unambiguously) */
+    --status-good: #3F8F52;
+    --status-watch: #D99A1F;
+    --status-bad: #C6432E;
  
     /* glass / bubble tokens */
     --glass: rgba(255, 253, 246, 0.5);
@@ -72,6 +77,9 @@
       --clay: #D07C57;
       --warn: #E08A5C;
       --caramel: #CB9457;
+      --status-good: #5FBE73;
+      --status-watch: #E8BB4E;
+      --status-bad: #E2694F;
  
       --glass: rgba(38, 29, 16, 0.5);
       --glass-strong: rgba(44, 34, 19, 0.72);
@@ -96,6 +104,9 @@
     --clay: #D07C57;
     --warn: #E08A5C;
     --caramel: #CB9457;
+    --status-good: #5FBE73;
+    --status-watch: #E8BB4E;
+    --status-bad: #E2694F;
  
     --glass: rgba(38, 29, 16, 0.5);
     --glass-strong: rgba(44, 34, 19, 0.72);
@@ -218,6 +229,18 @@
     background: none; border: none; color: var(--amber-ink); text-decoration: underline;
     cursor: pointer; font-size: 13.5px; padding: 0; font-family: inherit;
   }
+
+  /* ---------- status dots (red / yellow / green) ---------- */
+  .status-dot {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    margin-right: 6px; vertical-align: 1px; flex: 0 0 auto;
+  }
+  .status-dot.dot-good { background: var(--status-good); box-shadow: 0 0 0 3px rgba(0,0,0,0.06); }
+  .status-dot.dot-watch { background: var(--status-watch); box-shadow: 0 0 0 3px rgba(0,0,0,0.06); }
+  .status-dot.dot-bad { background: var(--status-bad); box-shadow: 0 0 0 3px rgba(0,0,0,0.06); }
+  .status-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-soft); margin: 0 0 14px; }
+  .status-legend span.legend-label { display: inline-flex; align-items: center; cursor: help; }
+  .history-table td.cell-with-dot { display: flex; align-items: center; }
  
   /* ---------- History table ---------- */
   .hive-tabs { display: inline-flex; flex-wrap: wrap; gap: 8px; }
@@ -397,6 +420,7 @@
     <h2>ค่าล่าสุดรายรัง</h2>
     <span class="caption" id="hiveCountCaption"></span>
   </div>
+  <div class="status-legend" id="statusLegend"></div>
   <div class="hive-grid" id="hiveGrid"></div>
  
   <div class="section-head">
@@ -476,7 +500,38 @@
   var STORAGE_KEY = 'chanrong-hives-v2';
   var THEME_KEY = 'chanrong-theme';
   var PALETTE = ['#C7861E', '#52713C', '#3A7472', '#A44F31', '#7A5FA8', '#3B6E9C'];
- 
+
+  // ---------- health status thresholds (red / yellow / green) ----------
+  // Based on reference ranges for stingless bees (ชันโรง):
+  //   good  (เขียว)  temp 22-38°C, humidity 70-85%
+  //   watch (เหลือง) just outside the good range but not yet critical - a buffer zone
+  //   bad   (แดง)    temp <22°C or >38°C, humidity <70% or far above the good range
+  // The exact "watch" buffer width isn't specified by any single source, so a
+  // reasonable +/-3 to 5 margin around the good range is used here; adjust the
+  // numbers below if you have more specific figures for your hives.
+  var STATUS_THRESHOLDS = {
+    temp: { goodMin: 22, goodMax: 38, watchMin: 19, watchMax: 41 },
+    hum: { goodMin: 70, goodMax: 85, watchMin: 60, watchMax: 92 }
+  };
+  function statusFor(value, cfg) {
+    if (value == null || isNaN(value)) return null;
+    if (value >= cfg.goodMin && value <= cfg.goodMax) return 'good';
+    if (value >= cfg.watchMin && value <= cfg.watchMax) return 'watch';
+    return 'bad';
+  }
+  function tempStatus(v) { return statusFor(v, STATUS_THRESHOLDS.temp); }
+  function humStatus(v) { return statusFor(v, STATUS_THRESHOLDS.hum); }
+  function statusDot(status) {
+    var dot = document.createElement('span');
+    dot.className = 'status-dot dot-' + (status || 'good');
+    return dot;
+  }
+  function statusLabel(status) {
+    if (status === 'bad') return 'วิกฤต';
+    if (status === 'watch') return 'เฝ้าระวัง';
+    return 'ปกติ';
+  }
+
   var DEFAULT_HIVES = [
     { id: 'h1', name: 'รังที่ 1', sourceType: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1Z3stbTTjkv_cIfGvNMidheTTAc7tMGKxvTJidm54HEM/edit?usp=sharing', color: PALETTE[0] },
     { id: 'h2', name: 'รังที่ 2', sourceType: 'sheet', url: '', color: PALETTE[1] },
@@ -804,20 +859,24 @@
       }
       panel.appendChild(meta);
  
-      panel.appendChild(readingRow('อุณหภูมิ', last.temp, prev ? prev.temp : null, '°C'));
-      panel.appendChild(readingRow('ความชื้น', last.hum, prev ? prev.hum : null, '%'));
-      panel.appendChild(readingRow('น้ำหนัก', last.weight, prev ? prev.weight : null, ' ก.'));
+      panel.appendChild(readingRow('อุณหภูมิ', last.temp, prev ? prev.temp : null, '°C', tempStatus(last.temp)));
+      panel.appendChild(readingRow('ความชื้น', last.hum, prev ? prev.hum : null, '%', humStatus(last.hum)));
+      panel.appendChild(readingRow('น้ำหนัก', last.weight, prev ? prev.weight : null, ' ก.', null));
  
       grid.appendChild(panel);
     });
   }
  
-  function readingRow(label, val, prevVal, unit) {
+  function readingRow(label, val, prevVal, unit, status) {
     var row = document.createElement('div');
     row.className = 'reading';
     var l = document.createElement('span');
     l.className = 'label';
-    l.textContent = label;
+    if (status) {
+      l.appendChild(statusDot(status));
+      l.title = 'สถานะ' + label + ': ' + statusLabel(status);
+    }
+    l.appendChild(document.createTextNode(label));
     row.appendChild(l);
     var v = document.createElement('span');
     v.className = 'value';
@@ -900,6 +959,16 @@
     td.textContent = text;
     tr.appendChild(td);
   }
+  function appendCellWithStatus(tr, text, status) {
+    var td = document.createElement('td');
+    if (status) {
+      td.className = 'cell-with-dot';
+      td.appendChild(statusDot(status));
+      td.title = statusLabel(status);
+    }
+    td.appendChild(document.createTextNode(text));
+    tr.appendChild(td);
+  }
 
   // rows for the currently selected hive + granularity/date, ascending by time.
   // shared by both the history table and the charts so they always agree.
@@ -960,8 +1029,8 @@
       appendCell(tr, filtered.length - i);
       tr.lastChild.className = 'col-seq';
       appendCell(tr, g === 'day' ? fmtTime(r.date) : (fmtDay(r.date) + ' ' + fmtTime(r.date)));
-      appendCell(tr, isNaN(r.temp) ? '—' : round1(r.temp));
-      appendCell(tr, isNaN(r.hum) ? '—' : round1(r.hum));
+      appendCellWithStatus(tr, isNaN(r.temp) ? '—' : round1(r.temp), tempStatus(r.temp));
+      appendCellWithStatus(tr, isNaN(r.hum) ? '—' : round1(r.hum), humStatus(r.hum));
       appendCell(tr, isNaN(r.weight) ? '—' : round1(r.weight));
       tbody.appendChild(tr);
     });
@@ -1267,6 +1336,26 @@
  
   // ---------- refresh controls ----------
   document.getElementById('refreshBtn').onclick = refreshAll;
+
+  // ---------- status legend (static) ----------
+  function renderStatusLegend() {
+    var wrap = document.getElementById('statusLegend');
+    if (!wrap) return;
+    var items = [
+      { status: 'good', text: 'ปกติ', title: 'อุณหภูมิ ' + STATUS_THRESHOLDS.temp.goodMin + '-' + STATUS_THRESHOLDS.temp.goodMax + '°C · ความชื้น ' + STATUS_THRESHOLDS.hum.goodMin + '-' + STATUS_THRESHOLDS.hum.goodMax + '%' },
+      { status: 'watch', text: 'เฝ้าระวัง', title: 'เริ่มเบี่ยงออกจากช่วงปกติเล็กน้อย — ควรติดตามใกล้ชิด' },
+      { status: 'bad', text: 'วิกฤต', title: 'อุณหภูมิต่ำกว่า ' + STATUS_THRESHOLDS.temp.goodMin + '°C หรือสูงกว่า ' + STATUS_THRESHOLDS.temp.goodMax + '°C · ความชื้นต่ำกว่า ' + STATUS_THRESHOLDS.hum.goodMin + '% หรือสูงผิดปกติ — ควรตรวจสอบรังทันที' }
+    ];
+    items.forEach(function (it) {
+      var span = document.createElement('span');
+      span.className = 'legend-label';
+      span.title = it.title;
+      span.appendChild(statusDot(it.status));
+      span.appendChild(document.createTextNode(it.text));
+      wrap.appendChild(span);
+    });
+  }
+  renderStatusLegend();
  
   // ---------- boot ----------
   refreshAll();
