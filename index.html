@@ -417,7 +417,7 @@
 <div class="wrap">
  
   <div class="section-head">
-    <h2>ค่าล่าสุดรายรัง</h2>
+    <h2>ค่าล่าสุดของแต่ละรัง</h2>
     <span class="caption" id="hiveCountCaption"></span>
   </div>
   <div class="status-legend" id="statusLegend"></div>
@@ -1119,6 +1119,7 @@
           yTemp: {
             type: 'linear',
             position: 'left',
+            min: 0,
             ticks: { color: tempColor, font: { family: 'Inter', size: 10.5 } },
             grid: { color: grid },
             title: { display: true, text: '°C', color: tempColor, font: { family: 'Inter', size: 11, weight: '600' } }
