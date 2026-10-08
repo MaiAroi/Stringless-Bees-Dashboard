@@ -464,7 +464,7 @@
           <tr>
             <th class="col-seq">ลำดับ</th>
             <th id="historyColLabel">เวลา</th>
-            <th>อุณหภูมิ (°C)</th><th>ความชื้น (%)</th><th>น้ำหนัก (ก.)</th><th>แบตเตอรี่</th>
+            <th>อุณหภูมิ (°C)</th><th>ความชื้น (%)</th><th>น้ำหนัก (g.)</th><th>แบตเตอรี่</th>
           </tr>
         </thead>
         <tbody id="historyTbody"></tbody>
@@ -651,12 +651,12 @@
     if (b == null) return null;
     if (typeof b === 'number') {
       var st = b >= BATTERY_THRESHOLDS.goodMin ? 'good' : (b >= BATTERY_THRESHOLDS.watchMin ? 'watch' : 'bad');
-      return { text: (Math.round(b * 10) / 10) + '%', status: st };
+      return { text: fmtNum(b) + '%', status: st };
     }
     var k = String(b).toLowerCase();
-    if (/low|empty|crit|ต่ำ|หมด/.test(k)) return { text: 'ต่ำ', status: 'bad' };
-    if (/med|mid|ปานกลาง|กลาง/.test(k)) return { text: 'ปานกลาง', status: 'watch' };
-    if (/high|full|good|สูง|เต็ม/.test(k)) return { text: 'สูง', status: 'good' };
+    if (/low|empty|crit|ต่ำ|หมด/.test(k)) return { text: 'Low', status: 'bad' };
+    if (/med|mid|ปานกลาง|กลาง/.test(k)) return { text: 'Medium', status: 'watch' };
+    if (/high|full|good|สูง|เต็ม/.test(k)) return { text: 'High', status: 'good' };
     return { text: String(b), status: null };
   }
   function rowsFromRawTable(rawRows) {
@@ -892,7 +892,7 @@
  
       panel.appendChild(readingRow('อุณหภูมิ', last.temp, prev ? prev.temp : null, '°C', tempStatus(last.temp)));
       panel.appendChild(readingRow('ความชื้น', last.hum, prev ? prev.hum : null, '%', humStatus(last.hum)));
-      panel.appendChild(readingRow('น้ำหนัก', last.weight, prev ? prev.weight : null, ' ก.', null));
+      panel.appendChild(readingRow('น้ำหนัก', last.weight, prev ? prev.weight : null, ' g.', null));
       panel.appendChild(batteryRow(last.battery));
  
       grid.appendChild(panel);
@@ -915,19 +915,20 @@
     if (isNaN(val)) {
       v.textContent = '—';
     } else {
-      v.textContent = round1(val) + unit;
+      v.textContent = fmtNum(val) + unit;
       if (prevVal != null && !isNaN(prevVal) && prevVal !== val) {
         var d = document.createElement('span');
         var diff = val - prevVal;
         d.className = 'delta ' + (diff > 0 ? 'up' : 'down');
-        d.textContent = (diff > 0 ? '▲' : '▼') + Math.abs(round1(diff));
+        d.textContent = (diff > 0 ? '▲' : '▼') + fmtNum(Math.abs(diff));
         v.appendChild(d);
       }
     }
     row.appendChild(v);
     return row;
   }
-  function round1(n) { return Math.round(n * 10) / 10; }
+  // show the value exactly as stored (only strips floating-point noise like 0.1000000000000014)
+  function fmtNum(n) { return String(parseFloat(Number(n).toPrecision(12))); }
   function batteryRow(b) {
     var info = batteryInfo(b);
     var row = document.createElement('div');
@@ -1083,9 +1084,9 @@
       appendCell(tr, filtered.length - i);
       tr.lastChild.className = 'col-seq';
       appendCell(tr, g === 'day' ? fmtTime(r.date) : (fmtDay(r.date) + ' ' + fmtTime(r.date)));
-      appendCellWithStatus(tr, isNaN(r.temp) ? '—' : round1(r.temp), tempStatus(r.temp));
-      appendCellWithStatus(tr, isNaN(r.hum) ? '—' : round1(r.hum), humStatus(r.hum));
-      appendCell(tr, isNaN(r.weight) ? '—' : round1(r.weight));
+      appendCellWithStatus(tr, isNaN(r.temp) ? '—' : fmtNum(r.temp), tempStatus(r.temp));
+      appendCellWithStatus(tr, isNaN(r.hum) ? '—' : fmtNum(r.hum), humStatus(r.hum));
+      appendCell(tr, isNaN(r.weight) ? '—' : fmtNum(r.weight));
       var bInfo = batteryInfo(r.battery);
       appendCellWithStatus(tr, bInfo ? bInfo.text : '—', bInfo ? bInfo.status : null);
       tbody.appendChild(tr);
@@ -1130,13 +1131,16 @@
     var canvas = document.getElementById('chartCombined');
     var emptyEl = document.getElementById('chartCombinedEmpty');
 
+    // weight can't really be negative, but an uncalibrated sensor can report it:
+    // floor the axis at 0 normally, yet let it extend below 0 when such readings exist
+    var weightHasNegative = rows.some(function (r) { return !isNaN(r.weight) && r.weight < 0; });
     var tempColor = cssVar('--amber');
     var humColor = cssVar('--teal');
     var weightColor = cssVar('--clay');
     renderChartLegend([
       { label: 'อุณหภูมิ (°C)', color: tempColor },
       { label: 'ความชื้น (%)', color: humColor },
-      { label: 'น้ำหนัก (ก.)', color: weightColor }
+      { label: 'น้ำหนัก (g.)', color: weightColor }
     ]);
 
     if (combinedChart) { combinedChart.destroy(); combinedChart = null; }
@@ -1159,7 +1163,7 @@
         datasets: [
           { label: 'อุณหภูมิ (°C)', data: rows.map(function (r) { return isNaN(r.temp) ? null : r.temp; }), borderColor: tempColor, backgroundColor: tempColor, spanGaps: true, tension: 0.3, pointRadius: pointRadius, borderWidth: 2, yAxisID: 'yTemp' },
           { label: 'ความชื้น (%)', data: rows.map(function (r) { return isNaN(r.hum) ? null : r.hum; }), borderColor: humColor, backgroundColor: humColor, spanGaps: true, tension: 0.3, pointRadius: pointRadius, borderWidth: 2, yAxisID: 'yHum' },
-          { label: 'น้ำหนัก (ก.)', data: rows.map(function (r) { return isNaN(r.weight) ? null : r.weight; }), borderColor: weightColor, backgroundColor: weightColor, spanGaps: true, tension: 0.3, pointRadius: pointRadius, borderWidth: 2, yAxisID: 'yWeight' }
+          { label: 'น้ำหนัก (g.)', data: rows.map(function (r) { return isNaN(r.weight) ? null : r.weight; }), borderColor: weightColor, backgroundColor: weightColor, spanGaps: true, tension: 0.3, pointRadius: pointRadius, borderWidth: 2, yAxisID: 'yWeight' }
         ]
       },
       options: {
@@ -1188,10 +1192,10 @@
             type: 'linear',
             position: 'right',
             offset: true,
-            min: 0,
+            min: weightHasNegative ? undefined : 0,
             ticks: { color: weightColor, font: { family: 'Inter', size: 10.5 } },
             grid: { drawOnChartArea: false },
-            title: { display: true, text: 'ก.', color: weightColor, font: { family: 'Inter', size: 11, weight: '600' } }
+            title: { display: true, text: 'g.', color: weightColor, font: { family: 'Inter', size: 11, weight: '600' } }
           }
         }
       }
@@ -1400,8 +1404,8 @@
     var wrap = document.getElementById('statusLegend');
     if (!wrap) return;
     var items = [
-      { status: 'good', text: 'ปกติ', title: 'อุณหภูมิ ' + STATUS_THRESHOLDS.temp.goodMin + '-' + STATUS_THRESHOLDS.temp.goodMax + '°C · ความชื้น ' + STATUS_THRESHOLDS.hum.goodMin + '-' + STATUS_THRESHOLDS.hum.goodMax + '% · แบตเตอรี่สูง (หรือ ≥' + BATTERY_THRESHOLDS.goodMin + '%)' },
-      { status: 'watch', text: 'เฝ้าระวัง', title: 'เริ่มเบี่ยงออกจากช่วงปกติเล็กน้อย / แบตเตอรี่ปานกลาง — ควรติดตามใกล้ชิด' },
+      { status: 'good', text: 'ปกติ', title: 'อุณหภูมิ ' + STATUS_THRESHOLDS.temp.goodMin + '-' + STATUS_THRESHOLDS.temp.goodMax + '°C · ความชื้น ' + STATUS_THRESHOLDS.hum.goodMin + '-' + STATUS_THRESHOLDS.hum.goodMax + '% · แบตเตอรี่ High (หรือ ≥' + BATTERY_THRESHOLDS.goodMin + '%)' },
+      { status: 'watch', text: 'เฝ้าระวัง', title: 'เริ่มเบี่ยงออกจากช่วงปกติเล็กน้อย / แบตเตอรี่ Medium — ควรติดตามใกล้ชิด' },
       { status: 'bad', text: 'วิกฤต', title: 'อุณหภูมิต่ำกว่า ' + STATUS_THRESHOLDS.temp.goodMin + '°C หรือสูงกว่า ' + STATUS_THRESHOLDS.temp.goodMax + '°C · ความชื้นต่ำกว่า ' + STATUS_THRESHOLDS.hum.goodMin + '% หรือสูงผิดปกติ — ควรตรวจสอบรังทันที' }
     ];
     items.forEach(function (it) {
